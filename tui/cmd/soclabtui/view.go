@@ -234,21 +234,56 @@ func (m model) View() string {
 		leftWidth = 1
 	}
 	minSideBySide := rightW + max(48, bannerW)
-	tooSmallForPanels := base < minSideBySide || m.height < 24
+	tooNarrow := base < minSideBySide
+	leftH := lipgloss.Height(leftContent)
+	// Lines the top section may occupy while still leaving ≥5 lines for output.
+	// Fixed cost: rule(1) + activity(1) + inputBox(3) + outputFixed(4) + minVP(5) = 14
+	availForTop := m.height - 14
+
+	callsign := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("110")).Render("  SOC LAB")
 
 	var top string
-	if tooSmallForPanels {
-		top = leftContent
-	} else {
-		panelH := max(max(svcH, lipgloss.Height(rulesPanel)), lipgloss.Height(leftContent))
+	switch {
+	case m.focusMode:
+		top = leftContent // placeholder; sections assembly skips it in focus mode
+
+	case availForTop <= 0:
+		top = "" // terminal too short for anything above the bars
+
+	case availForTop < 3:
+		top = callsign
+
+	case availForTop < leftH:
+		top = callsign + "\n\n" + dim.Render("  tab  ↑↓ history  f: focus  q: quit")
+
+	case tooNarrow && base >= 60 && availForTop >= 24:
+		// Wrap layout: banner full-width, all panels below in two columns
+		// (services left | rules+capture stacked right)
+		half := max(24, (base-8)/2)
+		svcLeft := card.Width(half).Render(strings.Join(svcRows, "\n"))
+		rulesRight := card.Width(half).Render(strings.Join(ruleRows, "\n"))
+		captureRight := card.Width(half).Render(strings.Join(captureRows, "\n"))
+		belowPanels := lipgloss.JoinHorizontal(lipgloss.Top,
+			svcLeft,
+			lipgloss.JoinVertical(lipgloss.Left, rulesRight, captureRight),
+		)
+		top = lipgloss.JoinVertical(lipgloss.Left, leftContent, belowPanels)
+
+	case !tooNarrow && availForTop >= 24:
+		// Side-by-side layout (wide terminal, tall enough for panels)
+		panelH := max(max(svcH, lipgloss.Height(rulesPanel)), leftH)
 		leftCol := lipgloss.Place(leftWidth, panelH, lipgloss.Left, lipgloss.Center, leftContent)
 		rightCol := lipgloss.Place(rightW, panelH, lipgloss.Left, lipgloss.Center, rightPanels)
 		top = lipgloss.JoinHorizontal(lipgloss.Top, leftCol, rightCol)
+
+	default:
+		// Banner only: tall enough for the banner but not for panels
+		top = leftContent
 	}
 
-	topH := lipgloss.Height(top)
-	if m.focusMode {
-		topH = 0
+	topH := 0
+	if top != "" && !m.focusMode {
+		topH = lipgloss.Height(top)
 	}
 	vpW := max(1, base-4)
 	m.viewport.Width = vpW
@@ -323,7 +358,7 @@ func (m model) View() string {
 	outputBlock := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("238")).Padding(0, 1).Render(outputContent)
 
 	sections := []string{rule, activity}
-	if !m.focusMode {
+	if !m.focusMode && top != "" {
 		sections = append([]string{top}, sections...)
 	}
 	sections = append(sections, outputBlock, inputBox)

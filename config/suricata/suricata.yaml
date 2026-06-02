@@ -41,7 +41,15 @@ outputs:
       filename: eve.json
       append: yes
       types:
-        - alert
+        - alert:
+            payload: yes
+            payload-printable: yes
+            http-body: yes
+            http-body-printable: yes
+            metadata:
+              app-layer: true
+              flow: true
+            tagged-packets: yes
         - flow
         - dns
         - http:
@@ -69,7 +77,16 @@ outputs:
         - doh2
         - pop3
 
+app-layer:
+  protocols:
+    modbus:
+      enabled: no
+    dnp3:
+      enabled: no
+
 stream:
+  midstream: true
+  async-oneside: true
   checksum-validation: no
 
 pcap-file:

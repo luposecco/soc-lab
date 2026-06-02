@@ -108,10 +108,27 @@ func (m model) estimateVpH() int {
 	svcPanelH := 2 + 1 + nSvcs + 1 + 3 // border + "Services" header + items + blank + ES rows
 	rulesPanelH := 2 + 1 + 2 + 1        // border + "Rules Status" header + 2 rows + timestamp
 	capturePanelH := 2 + 4              // border + 4 fixed content rows
-	leftH := 9                          // 6 banner lines + 1 empty + 2 helper lines
-	topH := max(leftH, svcPanelH+rulesPanelH+capturePanelH)
-	if m.focusMode {
+	leftH := 9                          // 6 banner lines + 1 empty + 2 helper lines (wide terminal)
+	if m.width > 0 && m.width < 84 {
+		leftH = 4 // compact "SOC LAB" + blank + 2 helper lines
+	}
+	availForTop := m.height - 14
+	tooNarrow := m.width > 0 && m.width < 104 // rough side-by-side threshold
+	var topH int
+	switch {
+	case m.focusMode || availForTop <= 0:
 		topH = 0
+	case availForTop < 3:
+		topH = 1
+	case availForTop < leftH:
+		topH = 3 // callsign + blank + hint
+	case tooNarrow && m.width >= 60 && availForTop >= 24:
+		// wrap: banner above, services left | rules+capture right below
+		topH = leftH + max(svcPanelH, rulesPanelH+capturePanelH)
+	case !tooNarrow && availForTop >= 24:
+		topH = max(leftH, svcPanelH+rulesPanelH+capturePanelH)
+	default:
+		topH = leftH
 	}
 	const inputH = 3  // card border(2) + 1 input line
 	const outFixed = 4 // cmdHeader(1) + blank(1) + border(2)
