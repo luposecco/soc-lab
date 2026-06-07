@@ -446,6 +446,487 @@ Key properties:
 
 ---
 
+## `scripts/commands/index.sh` — Enterprise-style aliases and data views
+
+The `index` command group exists to recreate enterprise index/alias names in the lab without duplicating documents. This is useful when production detections, dashboards, notebooks, or enrichment jobs expect names like `so-alerts`, `securityonion-alerts`, `logs-prod-alerts`, or other organization-specific aliases, while the lab's real storage remains `suricata-YYYY.MM.DD` and `elastalert2_alerts`.
+
+Supported commands:
+
+```bash
+soc-lab index list [--all]
+soc-lab index create <alias> <source> [--filter <query>] [--filter-json <json>] [source ...]
+soc-lab index delete <alias>
+```
+
+### Alias model: view, not copy
+
+An Elasticsearch alias is metadata attached to one or more concrete indices. It is not a separate index and it does not store documents.
+
+```
+so-alerts
+  ├─ alias entry on suricata-2026.06.04
+  └─ alias entry on elastalert2_alerts
+```
+
+When Kibana or a script queries `so-alerts`, Elasticsearch expands the alias to the backing indices and searches them as one logical target. Results are merged by Elasticsearch at query time.
+
+Important consequences:
+
+- `GET so-alerts/_search` reads from every attached backing index.
+- `POST so-alerts/_update_by_query` updates the real documents in the backing indices.
+- Deleting `so-alerts` removes alias metadata only; backing indices and documents remain.
+- SOC Lab intentionally does **not** create copy-on-write or duplicate enrichment indices for this feature. Enrichment through an alias modifies the original lab documents.
+- Direct single-document writes (`POST so-alerts/_doc`) are intentionally not configured as a primary workflow because a multi-index alias needs a single `is_write_index`. SOC Lab aliases are designed for search and `_update_by_query` enrichment.
+
+### Why wildcard sources need index templates
+
+Daily Suricata indices are concrete indices:
+
+```
+suricata-2026.06.03
+suricata-2026.06.04
+suricata-2026.06.05
+```
+
+The pattern `suricata-*` is not itself an index. When the user runs:
+
+```bash
+soc-lab index create so-alerts suricata-*
+```
+
+the command performs two separate operations:
+
+1. Resolve current matching indices with `_cat/indices/suricata-*` and attach alias `so-alerts` to each existing concrete match.
+2. Create a managed index template so future indices matching `suricata-*` automatically receive the same alias when Elasticsearch creates them.
+
+The generated template has this shape:
+
+```json
+{
+  "index_patterns": ["suricata-*"],
+  "priority": 500,
+  "template": {
+    "aliases": {
+      "so-alerts": {}
+    }
+  },
+  "_meta": {
+    "managed_by": "soc-lab",
+    "purpose": "alias-template",
+    "alias": "so-alerts",
+    "pattern": "suricata-*"
+  }
+}
+```
+
+No daemon or daily cron job is needed. Elasticsearch applies index templates at index-creation time. If Filebeat creates `suricata-2026.06.06` tomorrow, ES sees that it matches `suricata-*` and injects the alias into the new index metadata automatically.
+
+### Template naming and tracking
+
+Managed templates are named deterministically:
+
+```text
+soc-lab-alias-<safe-alias>-<sha1-pattern-prefix>
+```
+
+Example:
+
+```text
+soc-lab-alias-so-alerts-1f7bbb341775
+```
+
+The hash is based on the source pattern, not the alias alone. This allows one alias to have multiple wildcard sources without template name collisions:
+
+```bash
+soc-lab index create enterprise-events suricata-* logs-aws-*
+```
+
+Each wildcard source gets its own managed template. The `_meta` block is how `index list` and `index delete` identify templates owned by this feature. `index delete` only removes templates whose `_meta.managed_by == soc-lab`, `_meta.purpose == alias-template`, and `_meta.alias == <alias>`.
+
+### `index list`
+
+Default output hides dot-prefixed system indices and aliases:
+
+```bash
+soc-lab index list
+```
+
+This is deliberate. Elasticsearch and Kibana create many internal resources such as `.kibana*`, `.alerts-*`, `.internal.alerts-*`, and `.kibana_task_manager*`. These are normally implementation details and should not be touched by the lab alias tool.
+
+The default list shows:
+
+1. non-system concrete indices (`_cat/indices` filtered to names not starting with `.`)
+2. non-system aliases pointing to non-system indices (`_cat/aliases` filtered on alias and backing index)
+3. SOC Lab managed alias templates (`_index_template/soc-lab-alias-*` filtered by `_meta`)
+
+Full output is still available when debugging Elastic internals:
+
+```bash
+soc-lab index list --all
+```
+
+`--all` removes the dot-prefix filtering for indices and aliases. Managed-template output is unchanged because only SOC Lab alias templates are relevant to this command group.
+
+### `index create`: parser model
+
+The parser treats `--filter` and `--filter-json` as options attached to the source immediately before them.
+
+```bash
+soc-lab index create so-alerts \
+  suricata-* --filter 'event.dataset:suricata.alert' \
+  elastalert2_alerts --filter-json '{"match_all":{}}'
+```
+
+Internal parsed representation:
+
+| Source               | Filter type    | Filter value                       |
+| -------------------- | -------------- | ---------------------------------- |
+| `suricata-*`         | `query_string` | `event.dataset:suricata.alert`     |
+| `elastalert2_alerts` | `json`         | `{"match_all":{}}`               |
+
+Rules enforced by the parser:
+
+- `--filter` and `--filter-json` must follow a source.
+- A source can have at most one filter.
+- A source cannot use both filter modes.
+- Empty filter values are rejected.
+- Unknown `--...` options are rejected.
+- At least one source is required; source-less alias creation is intentionally not supported.
+
+### Filter modes
+
+#### `--filter`: Lucene/query_string
+
+`--filter '<query>'` is converted to Elasticsearch Query DSL:
+
+```json
+{
+  "query_string": {
+    "query": "event.dataset:suricata.alert AND source.ip:127.0.0.0/8"
+  }
+}
+```
+
+This supports Lucene query-string syntax, including:
+
+- `AND`, `OR`, `NOT`
+- parentheses, e.g. `event.dataset:(suricata.alert OR alert)`
+- fielded queries, e.g. `event.dataset:suricata.alert`
+- wildcards on suitable keyword/text fields, e.g. `user.name:admin*`
+- IP fields using exact IPs or CIDR ranges, e.g. `source.ip:127.0.0.0/8`
+
+`source.ip.keyword:127.*` only works if such a `.keyword` subfield actually exists. In ECS mappings, `source.ip` is commonly an `ip` field, so CIDR syntax is usually safer than wildcard strings for IPs.
+
+#### `--filter-json`: raw Query DSL
+
+`--filter-json '<json>'` is used directly as the alias filter object:
+
+```bash
+soc-lab index create so-alerts elastalert2_alerts \
+  --filter-json '{"term":{"event.dataset":"suricata.alert"}}'
+```
+
+This is more powerful than query-string syntax because it exposes the full Elasticsearch Query DSL:
+
+```json
+{"range":{"@timestamp":{"gte":"now-24h"}}}
+```
+
+```json
+{
+  "bool": {
+    "must": [
+      {"term": {"event.dataset": "suricata.alert"}},
+      {"exists": {"field": "source.ip"}}
+    ],
+    "must_not": [
+      {"term": {"event.kind": "metric"}}
+    ]
+  }
+}
+```
+
+Sanity checks for `--filter-json`:
+
+- JSON must parse successfully.
+- JSON must be an object (`dict`), not an array/string/number.
+- JSON object cannot be empty.
+
+### Alias action generation
+
+For each source, `index.sh` resolves current concrete indices:
+
+```bash
+resolve_indices() {
+  if source contains '*':
+      GET /_cat/indices/<pattern>?h=index
+  else:
+      require exact concrete index exists
+}
+```
+
+Concrete indices are grouped by filter. The command refuses ambiguous cases where the same resolved concrete index is targeted more than once with different filters:
+
+```bash
+soc-lab index create test \
+  suricata-* --filter 'event.dataset:suricata.alert' \
+  suricata-2026.06.04 --filter 'event.dataset:flow'
+```
+
+If `suricata-*` resolves to `suricata-2026.06.04`, this would attach two different alias filters to the same alias/index pair. Elasticsearch alias metadata can only hold one filter for that pair, so SOC Lab rejects it before calling ES.
+
+Generated `_aliases` request for a filtered source:
+
+```json
+{
+  "actions": [
+    {
+      "add": {
+        "index": "suricata-2026.06.04",
+        "alias": "so-alerts",
+        "filter": {
+          "query_string": {
+            "query": "event.dataset:suricata.alert"
+          }
+        }
+      }
+    }
+  ]
+}
+```
+
+Unfiltered sources omit the `filter` property entirely.
+
+### Filter validation
+
+Filters are validated before alias/template creation.
+
+If the source currently resolves to concrete indices:
+
+```text
+GET /<resolved-index-list>/_validate/query?explain=true
+body: { "query": <filter-object> }
+```
+
+If a wildcard source matches no current indices, SOC Lab still validates the query against Elasticsearch globally:
+
+```text
+GET /_validate/query?explain=true
+body: { "query": <filter-object> }
+```
+
+This catches syntax errors such as unmatched parentheses in `query_string` filters even when the user is intentionally creating a future-only template:
+
+```bash
+soc-lab index create future-alerts future-suricata-* --filter 'event.dataset:('
+```
+
+Validation checks syntax and query parseability. It does **not** require the filter to match any documents. Zero matching logs is valid and common when recreating enterprise environments before the data exists.
+
+### Future-only wildcard behavior
+
+Wildcard patterns are allowed to match zero current indices. This supports building an enterprise-like alias map before ingesting data.
+
+Example:
+
+```bash
+soc-lab index create prod-alerts prod-suricata-* --filter 'event.dataset:suricata.alert'
+```
+
+If `prod-suricata-*` matches no current index, SOC Lab displays:
+
+```text
+== No Current Index Matches ==
+
+The requested sources do not currently match any Elasticsearch indices.
+
+SOC Lab can still create managed alias templates so future indices matching
+your source patterns automatically receive alias '<alias>'.
+
+No existing documents will be visible through this alias until matching indices are created.
+
+Continue? [y/N]
+```
+
+If confirmed, no `_aliases` action is sent because there is no concrete index to modify. SOC Lab creates only the managed index template and Kibana data view. When a future matching index is created, Elasticsearch applies the alias and filter from the template.
+
+Concrete sources are stricter: `soc-lab index create alias missing-index` fails because there is no future pattern semantics for an exact missing index name.
+
+### Existing alias update semantics
+
+If the alias does not exist, `index create` creates it.
+
+If the alias already exists, `index create` is additive only:
+
+- existing backing indices remain attached
+- new requested sources are added
+- requested wildcard templates are created/updated
+- no old alias entries are removed
+
+Before changing an existing alias, SOC Lab prints current backing indices, requested sources, resolved target indices, and managed templates that will be ensured. Then it prompts through the shared `confirm()` helper:
+
+```text
+This will update alias '<alias>' by adding the requested sources and managed templates.
+Existing backing indices will remain attached. Continue? [y/N]
+```
+
+The same `SOC_LAB_ASSUME_YES=1` environment variable used by destructive stack commands also skips this prompt for scripted tests and TUI-confirmed actions.
+
+### `index delete`: safe removal only
+
+`index delete <alias>` removes:
+
+1. alias mappings from current backing indices
+2. SOC Lab managed alias templates for that alias
+3. the Kibana data view with the same title/name
+
+It never deletes physical indices or documents.
+
+Safety checks:
+
+- alias name must pass the same safe-name validation as create
+- if a physical concrete index exists with that name, the command refuses to continue
+- dot-prefixed system aliases are refused by the name validator
+- only templates with SOC Lab `_meta` ownership are deleted
+
+The prompt is intentionally explicit:
+
+```text
+This will remove alias '<alias>', its SOC Lab managed templates, and the Kibana data view.
+Physical Elasticsearch indices and documents will NOT be deleted.
+
+This operation cannot be undone automatically. Continue? [y/N]
+```
+
+Alias removal uses `_aliases` remove actions against the exact backing indices returned by `_cat/aliases/<alias>`. This is safer than broad wildcard deletion and avoids touching unrelated aliases.
+
+### Name validation and system-index protection
+
+Alias names must match:
+
+```text
+^[A-Za-z0-9][A-Za-z0-9._+-]*$
+```
+
+Additional alias restrictions:
+
+- cannot be empty
+- cannot be `_all`
+- cannot start with `.`
+- cannot contain `*`
+- cannot collide with an existing concrete index
+
+Source names/patterns must match:
+
+```text
+^[A-Za-z0-9][A-Za-z0-9._+*-]*$
+```
+
+Additional source restrictions:
+
+- cannot be `_all`
+- cannot start with `.`
+- cannot contain `/`
+- cannot contain `,`
+
+These checks intentionally block accidental modification of Kibana/Elastic system resources such as `.kibana*`, `.alerts-*`, `.internal.alerts-*`, and `.security*`.
+
+### Kibana data view lifecycle
+
+After a successful create/update, `index.sh` calls:
+
+```bash
+ensure_kibana_data_view "$alias" "@timestamp" "$alias"
+```
+
+This creates a Kibana data view named exactly like the alias. Discover and dashboards can then query the enterprise-style alias name directly.
+
+On delete, `index.sh` fetches Kibana data views and deletes any view where `title == <alias>` or `name == <alias>`:
+
+```text
+GET    /api/data_views
+DELETE /api/data_views/data_view/<id>
+```
+
+Kibana availability is best-effort. Create uses the shared helper, which silently returns if Kibana is down. Delete also returns without failing if `/api/status` is unavailable. Elasticsearch alias/template operations remain the source of truth.
+
+### TUI integration and quoted argument handling
+
+The Bubble Tea TUI exposes the new commands in the command palette and autocomplete:
+
+- `index list`
+- `index list --all`
+- `index create <alias> <source...>`
+- `index create <alias> <source> --filter '<query>'`
+- `index create <alias> <source> --filter-json '<json>'`
+- `index delete <alias>`
+
+Autocomplete behavior:
+
+- `index create <alias> <source>` completes source indices from `GET /_cat/indices?format=json`.
+- Wildcard suggestions are derived from existing index names by replacing the final dash-delimited suffix with `*` (`suricata-2026.06.04` → `suricata-*`).
+- `index create ... --` suggests `--filter` and `--filter-json`.
+- `index delete <alias>` completes aliases from `GET /_cat/aliases?format=json`.
+- Dot-prefixed system names are filtered out of completions.
+
+The TUI command runner uses `exec.Command` directly rather than running through a shell. That avoids shell injection, but it means the TUI must parse user input itself. A plain `strings.Fields` split would break filtered aliases:
+
+```text
+index create so-alerts suricata-* --filter 'event.dataset:suricata.alert AND source.ip:127.0.0.1'
+```
+
+With `strings.Fields`, the filter would be split into multiple arguments. The TUI now uses `splitCommandLine`, a small shell-style splitter that supports:
+
+- single quotes
+- double quotes
+- backslash escaping outside single quotes
+- whitespace separation outside quotes
+- unterminated quote detection
+
+It still executes the final argv via `exec.Command(filepath.Join(repoRoot, "soc-lab"), args...)`; no shell is invoked.
+
+The splitter has Go tests covering:
+
+- quoted Lucene filters with spaces and `AND`
+- quoted JSON filters
+- unterminated quote rejection
+
+### Debugging and verification commands
+
+Inspect alias metadata:
+
+```bash
+curl -s http://localhost:9200/_alias/so-alerts | jq
+```
+
+Inspect managed templates:
+
+```bash
+curl -s http://localhost:9200/_index_template/soc-lab-alias-* | jq
+```
+
+Validate a query manually:
+
+```bash
+curl -s -X GET 'http://localhost:9200/suricata-*/_validate/query?explain=true' \
+  -H 'Content-Type: application/json' \
+  -d '{"query":{"query_string":{"query":"event.dataset:suricata.alert"}}}'
+```
+
+Check visible alias backing indices:
+
+```bash
+curl -s 'http://localhost:9200/_cat/aliases/so-alerts?v'
+```
+
+Remove an alias safely through SOC Lab rather than raw Elasticsearch deletes:
+
+```bash
+soc-lab index delete so-alerts
+```
+
+---
+
 ## `scripts/commands/stack.sh`
 
 ### `cmd_start` orchestration
@@ -840,10 +1321,12 @@ tickMsg → fetchStatusCmd()        → statusMsg (docker ps)
 **Command streaming** — when the user runs a command:
 
 ```
-runSocLabCmd() → launches bash subprocess → streams stdout/stderr
+runSocLabCmd() → parses command line → launches ./soc-lab subprocess → streams stdout/stderr
               → sends cmdStreamChunkMsg for each line
               → sends cmdOutMsg when the process exits
 ```
+
+`splitCommandLine` preserves quoted arguments before `exec.Command` receives argv. This matters for commands such as `index create ... --filter 'event.dataset:suricata.alert AND source.ip:127.0.0.1'`; the filter must remain one argument. No shell is invoked, so quoted parsing is local to the TUI and command execution avoids shell interpolation.
 
 Streaming uses a Go channel (`chan tea.Msg`) fed by a goroutine reading from the process pipe. The `waitForStreamMsg` command waits for the next value from the channel and returns it as a `streamEnvelopeMsg`. This keeps the Bubble Tea event loop single-threaded while streaming output asynchronously.
 

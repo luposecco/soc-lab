@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aliases — SOC Lab</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.11.0/dist/tabler-icons.min.css">
+</head>
+<body>
+<div class="app">
+  <div class="sidebar" id="sidebar"></div>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="page-title">Aliases</span>
+      <button class="topbar-btn"><i class="ti ti-refresh" style="font-size:13px"></i> Refresh</button>
+    </div>
+
+    <div class="content">
+
+      <div id="aliases-banner"></div>
+
+      <!-- 3 metrics (cols3): Visible aliases, Wildcard templates, Data views synced -->
+      <div class="metrics cols3" id="aliases-metrics">
+        <div class="metric">
+          <div class="metric-label">Visible aliases</div>
+          <div class="metric-val blue">3</div>
+          <div class="metric-sub">3 system-managed, 0 user-facing</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Wildcard templates</div>
+          <div class="metric-val amber">2</div>
+          <div class="metric-sub">future daily indices auto-attach</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Data views synced</div>
+          <div class="metric-val green">2</div>
+          <div class="metric-sub">Discover stays aligned with alias names</div>
+        </div>
+      </div>
+
+      <!-- alias-layout: left (inventory + create form) / right (detail + templates) -->
+      <div class="alias-layout" style="flex:1;min-height:0;align-items:stretch">
+
+        <!-- Left col: alias-stack -->
+        <div class="alias-stack">
+
+          <!-- Inventory card (fixed height via CSS: inventory-card) -->
+          <div class="card inventory-card">
+            <div class="card-header">
+              <span class="card-title">Alias inventory</span>
+              <span class="card-action">auto-refresh</span>
+            </div>
+
+            <!-- Tabs: All (3) / System (3) / User (0) -->
+            <div class="tabs" id="alias-tabs">
+              <button class="tab active">All (3)</button>
+              <button class="tab">System (3)</button>
+              <button class="tab">User (0)</button>
+            </div>
+
+            <!-- Search -->
+            <div class="inventory-toolbar">
+              <input class="search-input" placeholder="Search aliases, sources, or tags">
+            </div>
+
+            <!-- Inventory list (3 system aliases, matches real app) -->
+            <div class="inventory-scroll" id="aliases-inventory-list">
+              <div class="list-rows">
+
+                <!-- sigma-alerts (system, locked) — first in real app -->
+                <div class="list-row">
+                  <div class="list-main">
+                    <div class="list-title">
+                      <button class="alias-select-btn" style="display:inline-flex;align-items:center">
+                        <span class="mono">sigma-alerts</span>
+                        <span class="inline-tags"><span class="tag blue">System</span></span>
+                      </button>
+                    </div>
+                    <div class="list-desc">ElastAlert2 sigma rule hits — single backing index.</div>
+                    <div class="list-meta">
+                      <span class="meta-pill">Locked</span>
+                      <span class="meta-pill">Startup ensured</span>
+                      <span class="meta-pill">Data view: sigma-alerts</span>
+                    </div>
+                  </div>
+                  <button class="svc-btn" disabled>Locked</button>
+                </div>
+
+                <!-- soc-alerts (system, locked) -->
+                <div class="list-row">
+                  <div class="list-main">
+                    <div class="list-title">
+                      <button class="alias-select-btn" style="display:inline-flex;align-items:center">
+                        <span class="mono">soc-alerts</span>
+                        <span class="inline-tags"><span class="tag blue">System</span></span>
+                      </button>
+                    </div>
+                    <div class="list-desc">Unified alert view — covers elastalert2_alerts + suricata-* (2 indexes now).</div>
+                    <div class="list-meta">
+                      <span class="meta-pill">Locked</span>
+                      <span class="meta-pill">Startup ensured</span>
+                      <span class="meta-pill">Future template enabled</span>
+                    </div>
+                  </div>
+                  <button class="svc-btn" disabled>Locked</button>
+                </div>
+
+                <!-- suricata (system, locked) -->
+                <div class="list-row">
+                  <div class="list-main">
+                    <div class="list-title">
+                      <button class="alias-select-btn" style="display:inline-flex;align-items:center">
+                        <span class="mono">suricata</span>
+                        <span class="inline-tags"><span class="tag blue">System</span></span>
+                      </button>
+                    </div>
+                    <div class="list-desc">All Suricata events — suricata-2026.06.07 + wildcard: suricata-*</div>
+                    <div class="list-meta">
+                      <span class="meta-pill">Locked</span>
+                      <span class="meta-pill">Startup ensured</span>
+                      <span class="meta-pill">Future template enabled</span>
+                    </div>
+                  </div>
+                  <button class="svc-btn" disabled>Locked</button>
+                </div>
+
+              </div>
+            </div>
+          </div><!-- /.inventory-card -->
+
+          <!-- Create alias form -->
+          <div class="card" id="alias-create-card">
+            <div class="card-header">
+              <span class="card-title">Create alias</span>
+              <span class="tag warning">Planned flow</span>
+            </div>
+            <div class="alias-card-body">
+              <div class="setting-row">
+                <div class="setting-label">
+                  <div class="setting-name">Alias name</div>
+                  <div class="setting-desc">Short name used in queries and dashboards.</div>
+                </div>
+                <input class="setting-input" placeholder="Alias name">
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">
+                  <div class="setting-name">Sources</div>
+                  <div class="setting-desc">Space-separated indices or wildcard patterns.</div>
+                </div>
+                <input class="setting-input wide" placeholder="suricata-* elastalert2_alerts">
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">
+                  <div class="setting-name">Filter mode</div>
+                  <div class="setting-desc">Optionally restrict which documents are visible.</div>
+                </div>
+                <div class="pages">
+                  <button class="page-btn active">Query string</button>
+                  <button class="page-btn">JSON DSL</button>
+                </div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">
+                  <div class="setting-name">Filter</div>
+                  <div class="setting-desc">Leave blank for no filter.</div>
+                </div>
+                <input class="setting-input wide" placeholder="event.dataset:suricata.alert">
+              </div>
+              <div style="display:flex;justify-content:flex-end">
+                <button class="topbar-btn primary"><i class="ti ti-plus" style="font-size:13px"></i> Create alias</button>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /.alias-stack left -->
+
+        <!-- Right col: alias-stack (detail + templates) -->
+        <div class="alias-stack">
+
+          <!-- Detail card -->
+          <div id="aliases-detail-card">
+            <div class="card" style="height:340px;display:flex;flex-direction:column;min-height:0">
+              <div class="card-header">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <span class="mono card-title">soc-alerts</span>
+                  <div style="display:flex">
+                    <button class="page-btn active">Summary</button>
+                    <button class="page-btn">All indices</button>
+                  </div>
+                </div>
+                <span class="tag blue">System</span>
+              </div>
+              <!-- Summary tab body -->
+              <div class="alias-card-body detail-card-scroll" style="flex:1;overflow-y:auto;min-height:0">
+                <div class="setting-row">
+                  <div class="setting-label">
+                    <div class="setting-name">Name</div>
+                    <div class="setting-desc mono">soc-alerts</div>
+                  </div>
+                  <button class="svc-btn" disabled>Locked</button>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-label">
+                    <div class="setting-name">Current backing indices</div>
+                    <div class="setting-desc">2 explicit backing indexes attached now: elastalert2_alerts, suricata-2026.06.07</div>
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-label">
+                    <div class="setting-name">Future wildcard coverage</div>
+                    <div class="setting-desc mono">suricata-*</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Managed templates card -->
+          <div id="aliases-templates-card" class="fill-card-wrapper">
+            <div class="card fill-card" style="padding:12px 14px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                <span style="font-size:13px;font-weight:500">Managed templates</span>
+                <span style="font-size:11px;color:#888780">Elasticsearch index templates</span>
+              </div>
+              <div class="terminal fill" style="font-size:11px;white-space:pre-wrap">soc-lab-alias-suricata-1f7bb341775
+  alias: suricata
+  pattern: suricata-*
+
+soc-lab-alias-soc-alerts-1f7bb341775
+  alias: soc-alerts
+  pattern: suricata-*
+
+soc-lab-alias-sigma-alerts-c3d4e5f6a1b2
+  alias: sigma-alerts
+  pattern: (none)</div>
+            </div>
+          </div>
+
+        </div><!-- /.alias-stack right -->
+      </div><!-- /.alias-layout -->
+    </div>
+  </div>
+</div>
+
+<script src="_nav.js"></script>
+<script>setActiveNav('aliases');</script>
+</body>
+</html>

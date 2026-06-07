@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Indices &amp; Aliases — SOC Lab</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.11.0/dist/tabler-icons.min.css">
+</head>
+<body>
+<div class="app">
+  <div class="sidebar" id="sidebar"></div>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="page-title">Indices &amp; Aliases</span>
+      <button class="topbar-btn"><i class="ti ti-refresh" style="font-size:13px"></i> Refresh</button>
+    </div>
+
+    <div id="settings-banner"></div>
+
+    <div class="content">
+
+      <!-- ALIASES section label -->
+      <div style="font-size:11px;font-weight:500;color:#888780;text-transform:uppercase;letter-spacing:0.05em;padding:4px 2px 0">Aliases</div>
+
+      <!-- Aliases table card -->
+      <div class="card">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Alias</th>
+              <th>Backing indices</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <span class="mono">sigma-alerts</span>
+                <span class="tag blue" style="margin-left:8px">System</span>
+              </td>
+              <td style="font-size:11px;color:#888780">elastalert2_alerts</td>
+              <td style="text-align:right">
+                <button class="svc-btn" disabled>Locked</button>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span class="mono">soc-alerts</span>
+                <span class="tag blue" style="margin-left:8px">System</span>
+              </td>
+              <td style="font-size:11px;color:#888780">elastalert2_alerts, suricata-2026.06.07 + wildcard: suricata-*</td>
+              <td style="text-align:right">
+                <button class="svc-btn" disabled>Locked</button>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span class="mono">suricata</span>
+                <span class="tag blue" style="margin-left:8px">System</span>
+              </td>
+              <td style="font-size:11px;color:#888780">suricata-2026.06.07 + wildcard: suricata-*</td>
+              <td style="text-align:right">
+                <button class="svc-btn" disabled>Locked</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Create alias form card -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">Create alias</span></div>
+        <div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap">
+          <div>
+            <div style="font-size:11px;color:#888780;margin-bottom:4px">Alias name</div>
+            <input class="setting-input" placeholder="e.g. so-alerts" style="width:180px">
+          </div>
+          <div>
+            <div style="font-size:11px;color:#888780;margin-bottom:4px">Source index / pattern</div>
+            <input class="setting-input" placeholder="e.g. suricata-* filebeat-*" style="width:260px">
+          </div>
+          <div style="padding-top:19px">
+            <button class="topbar-btn primary">
+              <i class="ti ti-plus" style="font-size:13px"></i> Create
+            </button>
+          </div>
+        </div>
+        <div id="alias-form-status" style="margin-top:8px"></div>
+      </div>
+
+      <!-- INDICES section label -->
+      <div style="font-size:11px;font-weight:500;color:#888780;text-transform:uppercase;letter-spacing:0.05em;padding:4px 2px 0">Indices</div>
+
+      <!-- Indices table card -->
+      <div class="card">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Index</th>
+              <th>Status</th>
+              <th style="text-align:right">Docs</th>
+              <th style="text-align:right">Size</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <div class="dot green" style="display:inline-block;vertical-align:middle"></div>
+                <span class="mono" style="margin-left:6px">elastalert2_alerts</span>
+              </td>
+              <td style="font-size:11px;color:#888780">open</td>
+              <td style="text-align:right;font-size:12px;font-weight:500">0</td>
+              <td style="font-size:11px;color:#888780;text-align:right">249b</td>
+            </tr>
+            <tr>
+              <td>
+                <div class="dot green" style="display:inline-block;vertical-align:middle"></div>
+                <span class="mono" style="margin-left:6px">elastalert2_alerts_status</span>
+              </td>
+              <td style="font-size:11px;color:#888780">open</td>
+              <td style="text-align:right;font-size:12px;font-weight:500">0</td>
+              <td style="font-size:11px;color:#888780;text-align:right">249b</td>
+            </tr>
+            <tr>
+              <td>
+                <div class="dot green" style="display:inline-block;vertical-align:middle"></div>
+                <span class="mono" style="margin-left:6px">suricata-2026.06.07</span>
+              </td>
+              <td style="font-size:11px;color:#888780">open</td>
+              <td style="text-align:right;font-size:12px;font-weight:500">904</td>
+              <td style="font-size:11px;color:#888780;text-align:right">875.9kb</td>
+            </tr>
+            <tr>
+              <td>
+                <div class="dot green" style="display:inline-block;vertical-align:middle"></div>
+                <span class="mono" style="margin-left:6px">elastalert2_alerts_silence</span>
+              </td>
+              <td style="font-size:11px;color:#888780">open</td>
+              <td style="text-align:right;font-size:12px;font-weight:500">0</td>
+              <td style="font-size:11px;color:#888780;text-align:right">249b</td>
+            </tr>
+            <tr>
+              <td>
+                <div class="dot green" style="display:inline-block;vertical-align:middle"></div>
+                <span class="mono" style="margin-left:6px">elastalert2_alerts_error</span>
+              </td>
+              <td style="font-size:11px;color:#888780">open</td>
+              <td style="text-align:right;font-size:12px;font-weight:500">0</td>
+              <td style="font-size:11px;color:#888780;text-align:right">249b</td>
+            </tr>
+            <tr>
+              <td>
+                <div class="dot green" style="display:inline-block;vertical-align:middle"></div>
+                <span class="mono" style="margin-left:6px">elastalert2_alerts_past</span>
+              </td>
+              <td style="font-size:11px;color:#888780">open</td>
+              <td style="text-align:right;font-size:12px;font-weight:500">0</td>
+              <td style="font-size:11px;color:#888780;text-align:right">249b</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="_nav.js"></script>
+<script>setActiveNav('settings');</script>
+</body>
+</html>

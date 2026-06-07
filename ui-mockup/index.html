@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SOC Lab — UI Mockups</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.11.0/dist/tabler-icons.min.css">
+  <style>
+    body { background: #f4f3ef; min-height: 100vh; }
+    .mockup-index { max-width: 860px; margin: 0 auto; padding: 40px 24px; }
+    h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    .sub { font-size: 13px; color: #888780; margin-bottom: 28px; }
+    h2 { font-size: 12px; font-weight: 600; color: #888780; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    .section { margin-bottom: 28px; }
+  </style>
+</head>
+<body>
+<div class="mockup-index">
+  <h1>SOC Lab — UI Mockups</h1>
+  <p class="sub">Static HTML+CSS prototypes mirroring the live Dash implementation. Edit these files to prototype layout changes before coding.</p>
+
+  <div class="section">
+    <h2>Home</h2>
+    <div class="page-grid">
+      <a class="page-tile" href="overview.html">
+        <span class="page-tile-icon"><i class="ti ti-gauge-2"></i></span>
+        <span class="page-tile-name">Overview</span>
+        <span class="page-tile-desc">Metrics, alert timeline, service status</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Detection</h2>
+    <div class="page-grid">
+      <a class="page-tile" href="alerts.html">
+        <span class="page-tile-icon"><i class="ti ti-bell"></i></span>
+        <span class="page-tile-name">Alerts</span>
+        <span class="page-tile-desc">Suricata + Sigma alert table</span>
+      </a>
+      <a class="page-tile" href="rules.html">
+        <span class="page-tile-icon"><i class="ti ti-shield-check"></i></span>
+        <span class="page-tile-name">Rules</span>
+        <span class="page-tile-desc">Suricata / Sigma / ElastAlert rule editor</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Traffic</h2>
+    <div class="page-grid">
+      <a class="page-tile" href="capture.html">
+        <span class="page-tile-icon"><i class="ti ti-player-play-filled"></i></span>
+        <span class="page-tile-name">Packet Replay</span>
+        <span class="page-tile-desc">Upload &amp; replay PCAP files</span>
+      </a>
+      <a class="page-tile" href="capture-live.html">
+        <span class="page-tile-icon"><i class="ti ti-access-point"></i></span>
+        <span class="page-tile-name">Live Capture</span>
+        <span class="page-tile-desc">Continuous tcpdump capture</span>
+      </a>
+      <a class="page-tile" href="network.html">
+        <span class="page-tile-icon"><i class="ti ti-network"></i></span>
+        <span class="page-tile-name">Network Flows</span>
+        <span class="page-tile-desc">Flow graph &amp; connection table</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Data</h2>
+    <div class="page-grid">
+      <a class="page-tile" href="ingest.html">
+        <span class="page-tile-icon"><i class="ti ti-upload"></i></span>
+        <span class="page-tile-name">Log Upload</span>
+        <span class="page-tile-desc">Upload arbitrary log files</span>
+      </a>
+      <a class="page-tile" href="aliases.html">
+        <span class="page-tile-icon"><i class="ti ti-layers-subtract"></i></span>
+        <span class="page-tile-name">Aliases</span>
+        <span class="page-tile-desc">Elasticsearch alias management</span>
+      </a>
+      <a class="page-tile" href="enrichment.html">
+        <span class="page-tile-icon"><i class="ti ti-dna"></i></span>
+        <span class="page-tile-name">Enrichment</span>
+        <span class="page-tile-desc">IP/domain/hash lookups</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>System</h2>
+    <div class="page-grid">
+      <a class="page-tile" href="stack.html">
+        <span class="page-tile-icon"><i class="ti ti-server"></i></span>
+        <span class="page-tile-name">Stack</span>
+        <span class="page-tile-desc">Service start / stop / logs</span>
+      </a>
+      <a class="page-tile" href="settings.html">
+        <span class="page-tile-icon"><i class="ti ti-settings"></i></span>
+        <span class="page-tile-name">Settings</span>
+        <span class="page-tile-desc">API keys, paths, preferences</span>
+      </a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

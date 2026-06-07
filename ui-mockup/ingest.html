@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Log Upload — SOC Lab</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.11.0/dist/tabler-icons.min.css">
+</head>
+<body>
+<div class="app">
+  <div class="sidebar" id="sidebar"></div>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="page-title">Log upload</span>
+    </div>
+
+    <div class="content" style="display:flex;flex-direction:column;gap:14px;flex:1">
+
+      <div class="row2">
+
+        <!-- Left col: Log file card + Upload options card -->
+        <div class="col">
+
+          <!-- Log file card -->
+          <div class="card" style="flex-shrink:0">
+            <div class="card-header"><span class="card-title">Log file</span></div>
+
+            <!-- Upload zone -->
+            <div class="upload-zone">
+              <div class="upload-icon"><i class="ti ti-file-import" style="font-size:24px;color:#888780"></i></div>
+              <div class="upload-title">Drop a log file or click to browse</div>
+              <div class="upload-sub">.log .json .csv .cef .txt .gz .zip .evtx</div>
+            </div>
+
+            <!-- File placeholder (dashed box) -->
+            <div style="margin-top:10px;display:flex;align-items:center;gap:8px;padding:8px 10px;background:#F9F9F8;border-radius:6px;border:1px dashed #DDDCDA">
+              <i class="ti ti-file-off" style="font-size:15px;color:#c0bfbb;flex-shrink:0"></i>
+              <div style="flex:1">
+                <div style="font-size:12px;font-weight:500;color:#888780">No file selected</div>
+                <div style="font-size:11px;color:#b0afac">Drop a file above or select from folder below</div>
+              </div>
+            </div>
+
+            <div style="border-top:0.5px solid rgba(0,0,0,0.07);margin:14px 0"></div>
+
+            <!-- From data/ingest/ section -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <span style="font-size:11px;font-weight:600;color:#888780;text-transform:uppercase;letter-spacing:0.05em">From data/ingest/</span>
+              <button class="rule-btn"><i class="ti ti-refresh" style="font-size:11px"></i> Refresh</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid rgba(0,0,0,0.06)">
+              <i class="ti ti-file-text" style="font-size:13px;color:#888780;flex-shrink:0"></i>
+              <span class="mono" style="font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">windows_events.evtx</span>
+              <span style="font-size:11px;color:#888780;flex-shrink:0">8.4 MB</span>
+              <button class="rule-btn">Select</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid rgba(0,0,0,0.06)">
+              <i class="ti ti-file-text" style="font-size:13px;color:#888780;flex-shrink:0"></i>
+              <span class="mono" style="font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">apache_access.log</span>
+              <span style="font-size:11px;color:#888780;flex-shrink:0">2.1 MB</span>
+              <button class="rule-btn">Select</button>
+            </div>
+            <button class="rule-btn" style="margin-top:8px;width:100%;justify-content:center;display:inline-flex;align-items:center;line-height:1">
+              <i class="ti ti-folder-open" style="font-size:13px;vertical-align:middle;margin-right:5px"></i>
+              <span style="vertical-align:middle">Show all files</span>
+            </button>
+
+            <div style="border-top:0.5px solid rgba(0,0,0,0.07);margin:14px 0"></div>
+
+            <!-- Pipeline file upload (compact, optional) -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <span style="font-size:11px;font-weight:600;color:#888780;text-transform:uppercase;letter-spacing:0.05em">Pipeline file</span>
+              <span class="tag blue">optional</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px dashed #c0bfbb;border-radius:8px;cursor:pointer">
+              <i class="ti ti-code-plus" style="font-size:18px;color:#888780;flex-shrink:0"></i>
+              <span style="font-size:12px;color:#888780;flex:1">Drop .yml / .json pipeline definition here</span>
+              <button class="rule-btn" style="flex-shrink:0">Browse</button>
+            </div>
+          </div>
+
+          <!-- Upload options card -->
+          <div class="card" style="flex-shrink:0">
+            <div class="card-header"><span class="card-title">Upload options</span></div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+
+              <div>
+                <div style="font-size:11px;color:#888780;margin-bottom:4px">Ingest pipeline</div>
+                <select class="select" style="width:100%;font-size:12px">
+                  <option value="">None (auto-detect)</option>
+                  <option>windows-eventlog [Windows]</option>
+                  <option>apache-access [DevOps/Web]</option>
+                  <option>nginx-access [DevOps/Web]</option>
+                  <option>syslog [Linux]</option>
+                </select>
+              </div>
+
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+                <input type="checkbox">
+                <div>
+                  <div class="setting-name">Build pipeline with AI</div>
+                  <div class="setting-desc">Auto-generate grok pipeline via local Ollama model</div>
+                </div>
+              </label>
+
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+                <input type="checkbox">
+                <div>
+                  <div class="setting-name">Keep mode</div>
+                  <div class="setting-desc">Preserve existing indexed data</div>
+                </div>
+              </label>
+
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+                <input type="checkbox">
+                <div>
+                  <div class="setting-name">Shift timestamps to now</div>
+                  <div class="setting-desc">Rebase event timestamps to current time</div>
+                </div>
+              </label>
+
+              <div>
+                <div style="font-size:11px;color:#888780;margin-bottom:4px">Index prefix (optional)</div>
+                <input class="setting-input" placeholder="e.g. custom-logs" style="width:100%;box-sizing:border-box">
+              </div>
+
+              <button class="topbar-btn primary" style="width:100%;justify-content:center">
+                <i class="ti ti-upload" style="font-size:14px"></i> Upload &amp; ingest
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right col: Upload results (top, fixed height) + Available pipelines (with search) -->
+        <div class="col">
+
+          <!-- Upload results — fixed height 274px -->
+          <div class="card" style="height:274px;display:flex;flex-direction:column">
+            <div class="card-header" style="flex-shrink:0">
+              <span class="card-title">Upload results</span>
+              <span style="font-size:11px;color:#888780"></span>
+            </div>
+            <div style="flex:1;min-height:0;overflow-y:auto">
+              <div style="font-size:12px;color:#888780;padding:12px 0">No upload results yet.</div>
+            </div>
+          </div>
+
+          <!-- Available pipelines — fixed height, scrolls inside -->
+          <div class="card" style="height:628px;display:flex;flex-direction:column">
+            <div class="card-header" style="flex-shrink:0">
+              <span class="card-title">Available pipelines</span>
+              <span style="font-size:11px;color:#888780">by vendor</span>
+            </div>
+            <!-- Vendor search input -->
+            <input class="setting-input" placeholder="Search vendors…"
+                   style="width:100%;box-sizing:border-box;padding:8px 12px;font-size:13px;margin-bottom:10px;flex-shrink:0">
+            <!-- Vendor table (scrollable) -->
+            <div style="flex:1;min-height:0;overflow-y:auto">
+              <table class="tbl">
+                <thead style="position:sticky;top:0;background:#fff;z-index:1">
+                  <tr><th>Vendor</th><th>Category</th><th style="text-align:right">Pipelines</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td style="font-weight:500;font-size:13px">1Password</td><td><span class="tag purple">Identity</span></td><td style="text-align:right;font-size:12px;color:#888780">3</td></tr>
+                  <tr><td style="font-weight:500;font-size:13px">Abnormal Security</td><td><span class="tag warning">Email</span></td><td style="text-align:right;font-size:12px;color:#888780">6</td></tr>
+                  <tr><td style="font-weight:500;font-size:13px">Activemq</td><td><span class="tag running">DevOps/Web</span></td><td style="text-align:right;font-size:12px;color:#888780">5</td></tr>
+                  <tr><td style="font-weight:500;font-size:13px">Admin By Request Epm</td><td><span class="tag unknown">Other</span></td><td style="text-align:right;font-size:12px;color:#888780">2</td></tr>
+                  <tr><td style="font-weight:500;font-size:13px">Airflow</td><td><span class="tag running">DevOps/Web</span></td><td style="text-align:right;font-size:12px;color:#888780">1</td></tr>
+                  <tr><td style="font-weight:500;font-size:13px">Airlock Digital</td><td><span class="tag stopped">Endpoint</span></td><td style="text-align:right;font-size:12px;color:#888780">3</td></tr>
+                  <tr><td style="font-weight:500;font-size:13px">Akamai</td><td><span class="tag blue">Network</span></td><td style="text-align:right;font-size:12px;color:#888780">1</td></tr>
+                  <tr><td style="font-weight:500;font-size:13px">Amazon Security Lake</td><td><span class="tag blue">Cloud</span></td><td style="text-align:right;font-size:12px;color:#888780">1</td></tr>
+                  <tr><td style="font-weight:500;font-size:13px">Apache</td><td><span class="tag unknown">Other</span></td><td style="text-align:right;font-size:12px;color:#888780">2</td></tr>
+                  <tr><td style="font-weight:500;font-size:13px">Apache Spark</td><td><span class="tag running">DevOps/Web</span></td><td style="text-align:right;font-size:12px;color:#888780">4</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="_nav.js"></script>
+<script>setActiveNav('ingest');</script>
+</body>
+</html>

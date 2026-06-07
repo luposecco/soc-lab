@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Overview — SOC Lab</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.11.0/dist/tabler-icons.min.css">
+  <style>
+    /* overview has a maxWidth 1100px content wrapper */
+    .ov-wrap { max-width: 1100px; width: 100%; display: flex; flex-direction: column; gap: 16px; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar" id="sidebar"></div>
+
+  <div class="main">
+    <!-- Topbar: title + time page-btn group + refresh -->
+    <div class="topbar">
+      <span class="page-title">Overview</span>
+      <div class="pages">
+        <span class="page-btn active">Live</span>
+        <span class="page-btn">1h</span>
+        <span class="page-btn">6h</span>
+        <span class="page-btn">24h</span>
+      </div>
+      <button class="topbar-btn"><i class="ti ti-refresh" style="font-size:13px"></i> Refresh</button>
+    </div>
+
+    <div class="content">
+      <div class="ov-wrap">
+
+        <!-- 5 metrics -->
+        <div class="metrics cols5">
+          <div class="metric">
+            <div class="metric-label">Active alerts</div>
+            <div class="metric-val red">3</div>
+            <div class="metric-sub">3 critical</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Flow events</div>
+            <div class="metric-val blue">—</div>
+            <div class="metric-sub">network flows</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Suricata docs</div>
+            <div class="metric-val blue">1,284,302</div>
+            <div class="metric-sub">total indexed</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Services</div>
+            <div class="metric-val green">6/6</div>
+            <div class="metric-sub">running</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Indices</div>
+            <div class="metric-val blue">7</div>
+            <div class="metric-sub">managed</div>
+          </div>
+        </div>
+
+        <!-- row23: timeline card (2fr) + services table (3fr) -->
+        <div class="row23">
+
+          <!-- Timeline card -->
+          <div class="card">
+            <div class="card-header" style="margin-bottom:8px">
+              <span class="card-title">Alert timeline</span>
+              <span style="font-size:11px;color:#888780">last 60 min · 5-min buckets</span>
+            </div>
+            <div class="timeline-chart" style="height:70px">
+              <div style="flex:1;height:20%;background:#B5D4F4;border-radius:2px 2px 0 0"></div>
+              <div style="flex:1;height:20%;background:#B5D4F4;border-radius:2px 2px 0 0"></div>
+              <div style="flex:1;height:40%;background:#378ADD;border-radius:2px 2px 0 0"></div>
+              <div style="flex:1;height:100%;background:#E24B4A;border-radius:2px 2px 0 0"></div>
+              <div style="flex:1;height:60%;background:#378ADD;border-radius:2px 2px 0 0"></div>
+              <div style="flex:1;height:30%;background:#378ADD;border-radius:2px 2px 0 0"></div>
+              <div style="flex:1;height:20%;background:#B5D4F4;border-radius:2px 2px 0 0"></div>
+              <div style="flex:1;height:20%;background:#B5D4F4;border-radius:2px 2px 0 0"></div>
+              <div style="flex:1;height:20%;background:#B5D4F4;border-radius:2px 2px 0 0"></div>
+              <div style="flex:1;height:20%;background:#B5D4F4;border-radius:2px 2px 0 0"></div>
+              <div style="flex:1;height:20%;background:#B5D4F4;border-radius:2px 2px 0 0"></div>
+              <div style="flex:1;height:20%;background:#B5D4F4;border-radius:2px 2px 0 0"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:#888780">
+              <span>60m ago</span><span>now</span>
+            </div>
+            <div style="display:flex;gap:14px;margin-top:12px">
+              <div><div style="width:10px;height:10px;background:#E24B4A;border-radius:2px;display:inline-block;margin-right:6px"></div><span style="font-size:12px;color:#888780">Critical</span></div>
+              <div><div style="width:10px;height:10px;background:#378ADD;border-radius:2px;display:inline-block;margin-right:6px"></div><span style="font-size:12px;color:#888780">High / Med</span></div>
+            </div>
+          </div>
+
+          <!-- Services table -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Services</span>
+              <a class="card-action" href="stack.html">View all →</a>
+            </div>
+            <table class="tbl">
+              <tbody>
+                <tr>
+                  <td><div style="display:flex;align-items:center;gap:8px"><div class="service-icon es" style="width:28px;height:28px;font-size:14px"><i class="ti ti-database"></i></div><span style="font-size:13px;font-weight:500">Elasticsearch</span></div></td>
+                  <td><span class="tag running">running</span></td>
+                  <td style="font-size:12px;color:#888780;text-align:right">4.2M docs</td>
+                </tr>
+                <tr>
+                  <td><div style="display:flex;align-items:center;gap:8px"><div class="service-icon ki" style="width:28px;height:28px;font-size:14px"><i class="ti ti-chart-pie"></i></div><span style="font-size:13px;font-weight:500">Kibana</span></div></td>
+                  <td><span class="tag running">running</span></td>
+                  <td style="font-size:12px;color:#888780;text-align:right">:5601</td>
+                </tr>
+                <tr>
+                  <td><div style="display:flex;align-items:center;gap:8px"><div class="service-icon su" style="width:28px;height:28px;font-size:14px"><i class="ti ti-radar"></i></div><span style="font-size:13px;font-weight:500">Suricata</span></div></td>
+                  <td><span class="tag running">running</span></td>
+                  <td style="font-size:12px;color:#888780;text-align:right">14,422 rules</td>
+                </tr>
+                <tr>
+                  <td><div style="display:flex;align-items:center;gap:8px"><div class="service-icon fb" style="width:28px;height:28px;font-size:14px"><i class="ti ti-brand-beats"></i></div><span style="font-size:13px;font-weight:500">Filebeat</span></div></td>
+                  <td><span class="tag running">running</span></td>
+                  <td style="font-size:12px;color:#888780;text-align:right">shipping</td>
+                </tr>
+                <tr>
+                  <td><div style="display:flex;align-items:center;gap:8px"><div class="service-icon ea" style="width:28px;height:28px;font-size:14px"><i class="ti ti-bell"></i></div><span style="font-size:13px;font-weight:500">ElastAlert2</span></div></td>
+                  <td><span class="tag running">running</span></td>
+                  <td style="font-size:12px;color:#888780;text-align:right">4 rules</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+
+        <!-- Recent alerts card -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Recent alerts</span>
+            <a class="card-action" href="alerts.html">View all →</a>
+          </div>
+          <table class="tbl">
+            <thead>
+              <tr><th>Time</th><th>Sev</th><th>Signature</th><th>Src → Dst</th><th>Dataset</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="mono" style="white-space:nowrap;font-size:11px">2026-06-06 22:14:01</td>
+                <td><span class="sev crit">Critical</span></td>
+                <td style="font-size:12px;font-weight:500;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">ET MALWARE Cobalt Strike Beacon</td>
+                <td class="mono">10.0.0.5 → 185.220.101.3:443</td>
+                <td><span class="tag blue">suricata.alert</span></td>
+              </tr>
+              <tr>
+                <td class="mono" style="white-space:nowrap;font-size:11px">2026-06-06 22:13:44</td>
+                <td><span class="sev high">High</span></td>
+                <td style="font-size:12px;font-weight:500">Sigma: Mimikatz Credential Access</td>
+                <td class="mono">10.0.0.12 → —</td>
+                <td><span class="tag blue">alert</span></td>
+              </tr>
+              <tr>
+                <td class="mono" style="white-space:nowrap;font-size:11px">2026-06-06 22:11:30</td>
+                <td><span class="sev med">Medium</span></td>
+                <td style="font-size:12px;font-weight:500">ET SCAN Nmap SYN Scan</td>
+                <td class="mono">192.168.1.100 → 10.0.0.1</td>
+                <td><span class="tag blue">suricata.alert</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Indices + Rules status -->
+        <div style="display:flex;gap:16px">
+
+          <div class="card" style="flex:1">
+            <div class="card-header">
+              <span class="card-title">Indices &amp; aliases</span>
+              <a class="card-action" href="aliases.html">Aliases →</a>
+            </div>
+            <table class="tbl">
+              <tbody>
+                <tr>
+                  <td class="mono" style="font-size:12px">suricata-2026.06.06</td>
+                  <td style="text-align:right;font-size:12px;font-weight:500">1,284,302 docs</td>
+                  <td><span class="tag running">Active</span></td>
+                </tr>
+                <tr>
+                  <td class="mono" style="font-size:12px">elastalert2_alerts</td>
+                  <td style="text-align:right;font-size:12px;font-weight:500">342 docs</td>
+                  <td><span class="tag running">Active</span></td>
+                </tr>
+                <tr>
+                  <td class="mono" style="font-size:12px">soc-alerts</td>
+                  <td style="text-align:right;font-size:12px;color:#888780">alias</td>
+                  <td><span class="tag blue">Alias</span></td>
+                </tr>
+                <tr>
+                  <td class="mono" style="font-size:12px">suricata</td>
+                  <td style="text-align:right;font-size:12px;color:#888780">alias</td>
+                  <td><span class="tag blue">Alias</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card" style="flex:1">
+            <div class="card-header">
+              <span class="card-title">Rules status</span>
+              <a class="card-action" href="rules.html">Manage →</a>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px">
+                <span style="color:#888780">Suricata</span>
+                <span class="tag running">OK</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px">
+                <span style="color:#888780">Sigma</span>
+                <span style="font-weight:500">12 / 12 loaded</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div><!-- /.ov-wrap -->
+    </div><!-- /.content -->
+  </div><!-- /.main -->
+</div><!-- /.app -->
+
+<script src="_nav.js"></script>
+<script>setActiveNav('overview');</script>
+</body>
+</html>

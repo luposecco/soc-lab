@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enrichment — SOC Lab</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.11.0/dist/tabler-icons.min.css">
+</head>
+<body>
+<div class="app">
+  <div class="sidebar" id="sidebar"></div>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="page-title">Enrichment</span>
+      <button class="topbar-btn"><i class="ti ti-refresh" style="font-size:13px"></i> Refresh</button>
+      <button class="topbar-btn"><i class="ti ti-network" style="font-size:13px"></i> Ping all</button>
+    </div>
+
+    <div id="enrich-banner"></div>
+
+    <div class="content">
+
+      <!-- 4 metrics: Clusters X/Y, Enrichments, Runs, Total ops -->
+      <div class="metrics" id="enrich-metrics">
+        <div class="metric">
+          <div class="metric-label">Clusters</div>
+          <div class="metric-val red">0/1</div>
+          <div class="metric-sub">online</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Enrichments</div>
+          <div class="metric-val blue">1</div>
+          <div class="metric-sub">configured</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Runs</div>
+          <div class="metric-val blue">0</div>
+          <div class="metric-sub">in history</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Total ops</div>
+          <div class="metric-val amber">0</div>
+          <div class="metric-sub">audit records</div>
+        </div>
+      </div>
+
+      <!-- Clusters card -->
+      <div class="card" id="enrich-clusters-wrap" style="margin-bottom:12px">
+        <div class="card-header"><span class="card-title">Clusters</span></div>
+        <div id="enrich-clusters-table">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Mode</th>
+                <th>Status</th>
+                <th style="text-align:right">Latency</th>
+                <th>Detail</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="mono">lab</td>
+                <td><span class="tag blue">internal</span></td>
+                <td><span class="tag warning">pending</span></td>
+                <td style="text-align:right;font-size:11px;color:#888780">—</td>
+                <td style="font-size:11px;color:#888780"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Enrichments card -->
+      <div class="card" id="enrich-list-wrap" style="margin-bottom:12px">
+        <div class="card-header"><span class="card-title">Enrichments</span></div>
+        <div id="enrich-list">
+
+          <!-- Enrichment card: Example Risk -->
+          <div class="card" style="margin-bottom:8px">
+            <div class="card-header">
+              <div>
+                <span class="card-title">Example Risk</span>
+                <div style="font-size:11px;color:#888780;margin-top:4px">Adds a risk score to severe alerts missing one.</div>
+              </div>
+              <div style="display:flex;gap:8px">
+                <button class="topbar-btn primary" style="padding:4px 10px;font-size:11px">
+                  <i class="ti ti-player-play" style="font-size:12px"></i> Run
+                </button>
+                <button class="topbar-btn" style="padding:4px 10px;font-size:11px">
+                  <i class="ti ti-player-play" style="font-size:12px"></i> Dry run
+                </button>
+              </div>
+            </div>
+            <div style="display:flex;gap:24px;font-size:11px;color:#888780">
+              <span class="mono"><span style="color:#5f5e5a">Script: </span>scripts/example_enrichment.py</span>
+              <span><span>Type: </span>play_batch</span>
+              <span><span>Targets: </span>lab</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Run history card -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">Run history</span></div>
+        <div id="enrich-runs-table">
+          <div style="font-size:12px;color:#888780;padding:12px 0">No enrichment runs yet.</div>
+          <!-- When runs exist, table structure:
+          <table class="tbl">
+            <thead><tr>
+              <th>Timestamp</th><th>Enrichment</th><th>Cluster</th>
+              <th style="text-align:right">Ops</th><th></th><th>Run ID</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td class="mono" style="font-size:11px;white-space:nowrap">2026-06-07 12:00:00</td>
+                <td>Example Risk</td>
+                <td>lab</td>
+                <td style="text-align:right;font-size:11px">142</td>
+                <td><button class="svc-btn stop" style="padding:3px 8px;font-size:11px">
+                  <i class="ti ti-rotate-clockwise" style="font-size:11px"></i> Rollback
+                </button></td>
+                <td class="mono" style="font-size:10px;color:#888780">run-abc123</td>
+              </tr>
+            </tbody>
+          </table>
+          -->
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="_nav.js"></script>
+<script>setActiveNav('enrichment');</script>
+</body>
+</html>

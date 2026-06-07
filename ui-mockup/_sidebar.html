@@ -1,0 +1,64 @@
+<!-- Reusable sidebar fragment.
+     Include this markup inside <div class="sidebar"> in each page.
+     The inline <script> in each page sets the active nav item by calling
+     setActiveNav('page-id') after DOM load. -->
+
+<a class="sidebar-logo" href="index.html">
+  <div class="logo-icon"><i class="ti ti-shield-half-filled"></i></div>
+  <span class="logo-text">SOC Lab</span>
+</a>
+
+<a class="nav-item" data-nav="overview" href="overview.html">
+  <i class="ti ti-gauge-2"></i> Overview
+</a>
+
+<div class="nav-section">Detection</div>
+<a class="nav-item" data-nav="alerts" href="alerts.html">
+  <i class="ti ti-bell"></i> Alerts
+  <span class="badge">12</span>
+</a>
+<a class="nav-item" data-nav="rules" href="rules.html">
+  <i class="ti ti-shield-check"></i> Rules
+</a>
+
+<div class="nav-section">Traffic</div>
+<a class="nav-item" data-nav="capture-pcap" href="capture.html">
+  <i class="ti ti-player-play-filled"></i> Packet Replay
+</a>
+<a class="nav-item" data-nav="capture-live" href="capture-live.html">
+  <i class="ti ti-access-point"></i> Live Capture
+</a>
+<a class="nav-item" data-nav="network" href="network.html">
+  <i class="ti ti-network"></i> Network Flows
+</a>
+
+<div class="nav-section">Data</div>
+<a class="nav-item" data-nav="ingest" href="ingest.html">
+  <i class="ti ti-upload"></i> Log Upload
+</a>
+<a class="nav-item" data-nav="aliases" href="aliases.html">
+  <i class="ti ti-layers-subtract"></i> Aliases
+</a>
+<a class="nav-item" data-nav="enrichment" href="enrichment.html">
+  <i class="ti ti-dna"></i> Enrichment
+</a>
+
+<div class="nav-section">System</div>
+<a class="nav-item" data-nav="stack" href="stack.html">
+  <i class="ti ti-server"></i> Stack
+</a>
+<a class="nav-item" data-nav="settings" href="settings.html">
+  <i class="ti ti-settings"></i> Settings
+</a>
+
+<div class="sidebar-bottom">
+  <div class="stack-status">
+    <div class="stack-title">Stack</div>
+    <div class="stack-row"><span class="dot green"></span> Elasticsearch</div>
+    <div class="stack-row"><span class="dot green"></span> Kibana</div>
+    <div class="stack-row"><span class="dot green"></span> Suricata</div>
+    <div class="stack-row"><span class="dot green"></span> Filebeat</div>
+    <div class="stack-row"><span class="dot green"></span> Logstash</div>
+    <div class="stack-row"><span class="dot green"></span> ElastAlert2</div>
+  </div>
+</div>

@@ -1,214 +1,358 @@
 # SOC Lab
 
-SOC Lab is a self-contained local network security detection lab. It lets you replay PCAPs, run live packet capture, and ingest arbitrary logs — feeding all of it through Suricata IDS and Sigma/ElastAlert2 detections, with results visible in Kibana.
+SOC Lab is a local security operations lab built around:
 
-The stack runs entirely in Docker. A single CLI entry point (`./soc-lab`) drives everything, either through a terminal UI or direct subcommands.
+- Elasticsearch
+- Kibana
+- Suricata
+- Filebeat
+- ElastAlert2
+- FastAPI
+- Dash
+- a Python enrichment SDK
 
----
+It is designed for realistic security-data workflows, not just static demos. You can replay PCAPs, capture live traffic, ingest raw logs, test detections, recreate enterprise alias names, and run enrichment logic against one or more Elasticsearch targets.
 
-## What's in the repo
+## Quick Run
 
-```
-soc-lab                  # main CLI entry point
-docker-compose.yml       # stack definition
-config/                  # Suricata, Filebeat, ElastAlert2 config files
-scripts/
-  commands/              # CLI command handlers
-  lib/                   # shared shell helpers and logging
-  loaders/               # Security Onion template and pipeline loaders
-  runtime/               # container entrypoint scripts
-  tools/                 # upload-logs.sh, pipeline_generator.py, venv setup
-rules/
-  suricata/              # custom .rules files (auto-loaded by Suricata)
-  sigma/                 # Sigma YAML detection rules (auto-converted on container start)
-pipelines/
-  elasticsearch/         # bundled Elasticsearch ingest pipelines
-  custom/                # user-added pipelines
-  generated/             # LLM-generated pipelines (--build-pipeline output)
-pcap/                    # drop PCAPs here for replay
-tui/                     # Go source for the Bubble Tea TUI
-docker-logs/             # bind-mount targets; Suricata logs and rule status artifacts
-```
-
----
-
-## Prerequisites
-
-- Docker + Docker Compose plugin
-- `dumpcap` (for `capture live`; part of Wireshark/tshark tools)
-- Go 1.22+ (only needed to rebuild the TUI binary)
-- Python 3.10+
-- Ollama running locally (optional; only for `--build-pipeline`)
-
----
-
-## Install and start
+Start everything:
 
 ```bash
-# Bootstrap Python venv and install local dependencies
-./soc-lab stack install
-
-# Start the full stack
-./soc-lab stack start
-
-# Verify everything is healthy
-./soc-lab health check
+./start.sh
 ```
 
-After `stack start`:
-- Kibana: http://localhost:5601
-- Elasticsearch: http://localhost:9200
+Open:
 
-`stack start` loads Security Onion ECS templates and ingest pipelines, creates Kibana data views, and starts the rules watcher. Data views are checked for existence before creation — re-running `stack start` will not create duplicates.
+- Dash UI: `http://127.0.0.1:8050`
+- FastAPI API: `http://127.0.0.1:8000`
+- Kibana: `http://localhost:5601`
+- Elasticsearch: `http://localhost:9200`
 
----
-
-## TUI
-
-The default way to use SOC Lab:
+Stop everything:
 
 ```bash
-./soc-lab tui
-# or just
-./soc-lab
+./stop.sh
 ```
 
-The TUI shows live service status, rules health, capture state, and a scrollable output pane. Type commands at the prompt and press Enter.
-
-| Key | Action |
-|-----|--------|
-| `tab` | Autocomplete / cycle completions |
-| `↑` / `↓` | Command history |
-| `pgup` / `pgdn` | Scroll output |
-| `f` | Toggle focus mode (hide panels, maximise output) |
-| `q` | Quit |
-
-Type `help` at the prompt to see the command palette.
-
----
-
-## Command reference
-
-### Stack
+Restart everything:
 
 ```bash
-./soc-lab stack install      # install Python venv and local deps
-./soc-lab stack start        # start all containers and initialise the stack
-./soc-lab stack status       # show container state
-./soc-lab stack stop         # stop containers, preserve volumes
-./soc-lab stack reset        # stop and wipe all volumes (prompts for confirmation)
-./soc-lab stack uninstall    # full teardown: containers, volumes, venv, installer-managed deps
+./restart.sh
 ```
 
-### PCAP replay
-
-Drop a PCAP in `./pcap/`, then:
+Destructive reset:
 
 ```bash
-./soc-lab capture replay pcap/file.pcap
-./soc-lab capture replay pcap/file.pcap --now     # shift event timestamps to current time
-./soc-lab capture replay pcap/file.pcap --keep    # keep existing indexed data
+./reset.sh
 ```
 
-`--now` is useful when the PCAP is old and Kibana's default "last 15 minutes" view would miss the events.
+## Enrichment SDK Quick Start
 
-Each replay (without `--keep`) resets Suricata indices, clears ElastAlert2 alert/status/silence indices, stops ElastAlert2, clears Suricata logs, then replays and restarts everything clean.
+User scripts live under:
 
-### Live capture
-
-```bash
-./soc-lab capture live                     # default interface (en0), 10 s chunk rotation
-./soc-lab capture live en0 30              # interface en0, 30 s chunks
-./soc-lab capture live en0 10 --keep       # preserve previously indexed data
+```text
+data/enrichments/scripts/
 ```
 
-Captures with `dumpcap` into a rotating ring of `.pcapng` files. Each completed chunk is automatically replayed through Suricata. A new session (without `--keep`) resets all Suricata and ElastAlert2 data before starting.
+They import the public SDK surface like this:
 
-### Log upload
-
-```bash
-# Use a named ingest pipeline
-./soc-lab capture upload logs/app.log --type <pipeline-name>
-
-# Generate a pipeline from the log sample using a local LLM
-./soc-lab capture upload logs/app.log --build-pipeline
-
-# Batch upload a folder
-./soc-lab capture upload --batch --folder logs/sample-set --type <pipeline-name>
-./soc-lab capture upload --batch --folder logs/sample-set --build-pipeline
+```python
+from soc_enrich import EnrichmentContext
 ```
 
-Pipeline resolution for `--type`:
-- Checks Elasticsearch (pipeline already loaded)
-- Falls back to local YAML in `pipelines/elasticsearch/`, `pipelines/custom/`, `pipelines/generated/`
-- If the pipeline cannot be loaded, reports the failure; if the log is JSON or CEF, interactively offers to fall back to direct ingest
+Minimal example:
 
-JSON and CEF files are ingested directly without a pipeline. Plain text requires `--type` or `--build-pipeline`.
+```python
+from soc_enrich import EnrichmentContext
 
-Optional flags:
-- `--keep` — append to the existing index instead of deleting it first
-- `--now` — set `@timestamp` to ingest time; preserve the original parsed time in `event.created`
-- `--index <name>` — override the target index name
+ENRICHMENT_META = {
+    "type": "play_batch",
+    "name": "Risk Scorer",
+    "description": "Adds risk fields to matching alerts.",
+}
 
-### Rules
-
-```bash
-./soc-lab rules compile    # validate Suricata rules and convert Sigma rules
+def run(ctx: EnrichmentContext) -> None:
+    ctx.update_by_query(
+        index="soc-alerts",
+        query={
+            "bool": {
+                "must": [{"term": {"event.dataset": "suricata.alert"}}],
+                "must_not": [{"exists": {"field": "risk.score"}}],
+            }
+        },
+        fields={
+            "risk.score": 80,
+            "risk.reason": "matched enrichment policy",
+        },
+    )
 ```
 
-Writes status artifacts to `docker-logs/rules/`:
-- `status.json` — machine-readable rule health (read by TUI)
-- `suricata-compile.log`
-- `sigma-compile.log`
+Important SDK semantics:
 
-The rules watcher starts automatically with the stack and recompiles whenever rule files change.
+- `index_doc(...)` is create-only
+- `update_doc(...)` mutates an existing document and creates missing fields if needed
+- `search(...)` is for smaller result sets returned as a list
+- `scan(...)` is for iterating larger result sets
+- mutating methods write audit records into the central lab cluster
+- field-level rollback supports update/remove style mutations
 
-### Health
+For the deeper docs, read:
 
-```bash
-./soc-lab health check
+- `docs/08-enrichment.md`
+- `docs/10-enrichment-sdk-reference.md`
+- `docs/11-enrichment-internals.md`
+
+## What The System Is Trying To Do
+
+At a very high level, SOC Lab takes security-relevant input and moves it through the same kinds of stages you would see in a real security analytics environment.
+
+```text
+raw input
+  ├─ PCAP replay
+  ├─ live network capture
+  └─ generic log upload
+
+       |
+       v
+normalization / ingestion
+       |
+       v
+Elasticsearch indices and aliases
+       |
+       +-> Kibana search and dashboards
+       +-> ElastAlert2 detections
+       +-> enrichment scripts
 ```
 
-### Security Onion sync
+The repo also gives you a web control plane on top of that runtime stack.
 
-```bash
-./soc-lab so sync    # reload SO ECS templates and ingest pipelines
+## Architecture In One Diagram
+
+This diagram is intentionally detailed. It shows the host-run web control plane, Docker networking, service boundaries, and the main data paths.
+
+```text
+HOST MACHINE
+┌───────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                               │
+│  Browser                                                                                      │
+│    │                                                                                          │
+│    ├─ HTTP http://127.0.0.1:8050 ───────────────────────────────► Dash UI                     │
+│    │                                                              ui/app.py + ui/pages/*      │
+│    │                                                                 │                        │
+│    │                                                                 ├─ HTTP api_get/api_post │
+│    │                                                                 │                        │
+│    └─ HTTP http://localhost:5601 ──────────────────────────────────► Kibana port forward      │
+│                                                                                               │
+│  Host-run Python control plane                                                                │
+│    ┌─────────────────────────┐          Python imports          ┌──────────────────────────┐  │
+│    │ FastAPI :8000           │ ───────────────────────────────► │ core/* service modules   │  │
+│    │ api/main.py             │                                  │ stack/ elastic/ capture/ │  │
+│    │ api/routes/*.py         │ ◄─────────────────────────────── │ ingest/ rules/ enrich/   │  │
+│    └─────────────────────────┘            return JSON           │ settings/ confirm        │  │
+│                                                                 └─────────────┬────────────┘  │
+│                                                                               │               │
+│                                                                               │ subprocess /  │
+│                                                                               │ HTTP / files  │
+│                                                                               v               │
+│                                                                   local files + Docker CLI    │
+│                                                                                               │
+└───────────────────────────────────────────────────────────────────────────────────────────────┘
+
+DOCKER INTERNAL NETWORK
+─────────────────────────────────────────────────────────────────────────────────────────────────
+
+┌──────────────────────┐       HTTP :9200        ┌──────────────────────────────────────────────┐
+│      Kibana          │ ──────────────────────► │              Elasticsearch                   │
+│  query/render layer  │ ◄────────────────────── │  stores docs, aliases, templates, pipelines  │
+└──────────────────────┘      JSON results       │                                              │
+                                                 │  important indices/aliases:                  │
+                                                 │    suricata-*                                │
+                                                 │    elastalert2_alerts                        │
+                                                 │    soc-alerts                                │
+                                                 │    soc-lab-enrichment-audit-*                │
+                                                 └────────────────┬─────────────────────────────┘
+                                                                  ▲
+                                                                  │ POST /_bulk, /_search, etc
+                        tails eve.json                            │
+┌──────────────────────┐  from bind mount  ┌──────────────────────┴─────────────────────────────┐
+│      Filebeat        │ ─────────────────►│              Elasticsearch ingest                  │
+│ reads eve.json       │                   │  pipelines normalize Suricata and uploaded logs    │
+└───────────┬──────────┘                   └────────────────────────────────────────────────────┘
+            │
+            │ bind-mounted file
+            v
+┌───────────────────────────────────────────────────────────────────────────────────────────────┐
+│ runtime/logs/suricata/eve.json                                                                │
+│ shared file path between host and containers                                                  │
+└───────────────────────────────▲───────────────────────────────────────────────────────────────┘
+                                │ writes JSON events
+                                │
+                     docker exec│suricata -r <pcap>
+                                │
+┌──────────────────────┐        │        PCAPs from bind mount        ┌─────────────────────────┐
+│      Suricata        │ ◄──────┴──────────────────────────────────── │ data/pcap on host       │
+│ decode/reassembly    │                                              │ replay files + live     │
+│ rules -> eve.json    │                                              │ capture chunks          │
+└──────────────────────┘                                              └─────────────────────────┘
+
+┌──────────────────────┐       HTTP :9200        ┌──────────────────────────────────────────────┐
+│    ElastAlert2       │ ──────────────────────► │              Elasticsearch                   │
+│ scheduled searches   │ ◄────────────────────── │  queries suricata-* and writes alert docs    │
+│ writes alert docs    │      query results      └──────────────────────────────────────────────┘
+└──────────────────────┘
 ```
 
-Runs automatically during `stack start`. Use manually to refresh pipelines without a full restart.
+## Main Data Paths
 
----
+### Path 1: PCAP replay
 
-## Rules
-
-| Folder | Contents |
-|--------|----------|
-| `rules/suricata/` | Custom Suricata `.rules` files — loaded automatically |
-| `rules/sigma/` | Sigma YAML detection rules — converted to ElastAlert2 format on container start |
-
-Edit rule files; the watcher picks up changes and recompiles within a few seconds.
-
----
-
-## Kibana data views
-
-Created automatically by `stack start` (only if they do not already exist):
-
-| Name | Pattern | Contents |
-|------|---------|----------|
-| All Logs | `*` | Everything |
-| Suricata | `suricata-*` | All Suricata events (alerts, DNS, HTTP, TLS, flow, …) |
-| ElastAlert2 Alerts | `elastalert2_alerts` | Sigma/ElastAlert2 fired alerts |
-| Alerts | `soc-alerts` | Unified: Suricata IDS alerts + ElastAlert2/Sigma alerts |
-
-Each `capture upload` also creates a `logs-<name>-*` data view for the uploaded data.
-
----
-
-## Stop and cleanup
-
-```bash
-./soc-lab stack stop         # stop containers, volumes survive
-./soc-lab stack reset        # stop + wipe volumes (requires confirmation)
-./soc-lab stack uninstall    # full teardown including deps
+```text
+PCAP file
+  -> docker exec suricata suricata -r <pcap>
+  -> Suricata writes events to eve.json
+  -> Filebeat tails eve.json
+  -> Filebeat bulk-indexes events into Elasticsearch
+  -> Kibana and the SOC Lab UI can query them
+  -> ElastAlert2 later queries them and may write alerts
 ```
+
+### Path 2: Live capture
+
+```text
+host interface
+  -> dumpcap writes rotating .pcapng chunks
+  -> SOC Lab queue logic notices completed chunks
+  -> each chunk is replayed through Suricata
+  -> eve.json updates
+  -> Filebeat ships events
+  -> Elasticsearch stores them
+```
+
+### Path 3: Generic log upload
+
+```text
+uploaded or local log file
+  -> preprocess / detect format
+  -> optional ingest pipeline selection or generation
+  -> bulk ingest into Elasticsearch
+  -> Kibana data view creation
+  -> searchable in Kibana and the Dash UI
+```
+
+### Path 4: Enrichment
+
+```text
+UI/API request
+  -> enrichment runner
+  -> target cluster client
+  -> script run(ctx) or run(ctx, params)
+  -> document reads/writes on target ES cluster
+  -> audit record written to central lab cluster
+```
+
+## Repository Structure
+
+This is the current repo snapshot in a `tree`-style layout. It is meant to help a new human or LLM understand where responsibilities live.
+
+```text
+soc-lab/
+├── api/
+│   ├── main.py                  # FastAPI app entry point and router registration
+│   ├── models.py                # Pydantic request/response models
+│   ├── utils.py                 # API error helpers
+│   └── routes/
+│       ├── alerts.py            # alert search and aggregations
+│       ├── capture.py           # replay, live capture, upload, pipeline endpoints
+│       ├── enrichment.py        # enrichment run, cluster, audit, rollback endpoints
+│       ├── indices.py           # alias and index inventory / mutation endpoints
+│       ├── network.py           # Suricata flow queries and summaries
+│       ├── overview.py          # dashboard summary endpoint
+│       ├── rules.py             # rule inventory, edit, validate, compile, watcher endpoints
+│       └── stack.py             # stack control, service logs, service status
+├── config/
+│   ├── elastalert2/
+│   │   ├── elastalert2.yml      # ElastAlert2 runtime configuration
+│   │   └── rules/               # static native ElastAlert2 rules
+│   ├── filebeat/
+│   │   └── filebeat.yml         # Filebeat input/output shipping config
+│   └── suricata/
+│       ├── suricata.yaml        # main Suricata configuration
+│       └── threshold.config     # alert suppression settings
+├── core/
+│   ├── capture/
+│   │   ├── live.py              # live capture orchestration
+│   │   └── replay.py            # PCAP replay orchestration
+│   ├── elastic/
+│   │   ├── aliases.py           # alias management and Kibana data views
+│   │   ├── client.py            # Elasticsearch client factory
+│   │   ├── kibana.py            # Kibana REST helper wrapper
+│   │   └── loader.py            # Security Onion template/pipeline loader
+│   ├── enrich/
+│   │   ├── audit.py             # enrichment audit write/read helpers
+│   │   ├── clusters.py          # enrichment cluster config loader and routing
+│   │   ├── context.py           # main enrichment SDK implementation
+│   │   ├── rollback.py          # field-level rollback engine
+│   │   ├── runner.py            # enrichment orchestration from config to execution
+│   │   ├── scripts.py           # dynamic enrichment script loader
+│   │   └── utils.py             # enrichment field/query helpers
+│   ├── ingest/
+│   │   ├── bulk.py              # bulk ingest helpers
+│   │   ├── llm.py               # Ollama/LLM workflow wrapper
+│   │   ├── pipeline.py          # ingest pipeline lookup and upload
+│   │   ├── pipeline_gen.py      # ingest pipeline generation logic
+│   │   ├── preprocess.py        # decompress / detect / normalize inputs
+│   │   └── upload.py            # high-level upload orchestration
+│   ├── rules/
+│   │   └── compile.py           # rules compile checks and watcher lifecycle
+│   ├── stack/
+│   │   ├── docker.py            # Docker service inventory helpers
+│   │   ├── health.py            # stack health aggregation
+│   │   └── runtime.py           # stack lifecycle and service control
+│   ├── confirm.py               # y/N prompt helper for destructive operations
+│   └── settings.py              # repo paths and URL/port configuration helpers
+├── data/
+│   ├── enrichments/
+│   │   ├── config/              # enrichment cluster and run config
+│   │   └── scripts/             # user enrichment scripts
+│   ├── ingest/                  # sample logs for ingest testing
+│   ├── pcap/                    # replay PCAPs and live capture artifacts
+│   ├── pipelines/               # built-in, custom, and generated ingest pipelines
+│   └── rules/                   # user-editable Suricata and Sigma rules
+├── docker/
+│   ├── elastalert-start.sh      # ElastAlert2 container entrypoint
+│   └── suricata-start.sh        # Suricata container entrypoint
+├── docs/                        # main long-form documentation set
+├── runtime/                     # runtime logs and generated status files
+├── soc_enrich/
+│   └── __init__.py              # public enrichment SDK import surface
+├── ui/
+│   ├── app.py                   # Dash app entry point
+│   ├── helpers.py               # API wrappers and shared UI components
+│   ├── assets/style.css         # global CSS styling
+│   └── pages/                   # feature pages
+├── compose.yml                  # Docker Compose definition for the lab stack
+├── start.sh                     # start Docker stack + FastAPI + Dash + watcher
+├── stop.sh                      # stop host-run web processes and Docker stack
+├── restart.sh                   # restart helper
+├── reset.sh                     # destructive reset helper
+├── EXPLANATION.md               # older very detailed conceptual deep dive
+├── WEB_MIGRATION_DESIGN.md      # web migration architecture notes
+└── ENRICHMENT_DESIGN.md         # enrichment design notes and decisions
+```
+
+## Documentation Index
+
+The main long-form documentation now lives under `docs/`.
+
+- `docs/README.md` - reading order and documentation map
+- `docs/01-system-overview.md` - big-picture architecture and component roles
+- `docs/02-repo-map.md` - repo tree and file-role guide
+- `docs/03-runtime-stack.md` - Docker stack, startup scripts, config, and runtime state
+- `docs/04-backend-services.md` - explanation of `core/` service modules
+- `docs/05-api-reference.md` - FastAPI structure and route-to-service mapping
+- `docs/06-ui-guide.md` - Dash structure, helper patterns, and page behavior
+- `docs/07-data-flows.md` - end-to-end workflow diagrams and low-level behavior
+- `docs/08-enrichment.md` - enrichment subsystem deep dive
+- `docs/09-operations.md` - debugging and operational verification
+- `docs/10-enrichment-sdk-reference.md` - method-level enrichment SDK reference
+- `docs/11-enrichment-internals.md` - low-level implementation walkthrough of `core/enrich/*`

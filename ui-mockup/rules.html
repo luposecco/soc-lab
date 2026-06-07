@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rules — SOC Lab</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.11.0/dist/tabler-icons.min.css">
+</head>
+<body>
+<div class="app">
+  <div class="sidebar" id="sidebar"></div>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="page-title">Rules</span>
+      <button class="topbar-btn"><i class="ti ti-refresh" style="font-size:13px"></i> Refresh</button>
+      <button class="topbar-btn primary"><i class="ti ti-player-play" style="font-size:13px"></i> Compile</button>
+    </div>
+
+    <div id="rules-banner"></div>
+
+    <div class="content" style="display:flex;flex-direction:column">
+
+      <!-- 4 metrics (default grid = 4 cols) -->
+      <div class="metrics" id="rules-metrics" style="flex-shrink:0">
+        <div class="metric">
+          <div class="metric-label">Total rules</div>
+          <div class="metric-val blue">14,438</div>
+          <div class="metric-sub">all types</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Sigma</div>
+          <div class="metric-val blue">12</div>
+          <div class="metric-sub">detection rules</div>
+        </div>
+        <div class="metric">
+          <!-- Suricata compile error state → red -->
+          <div class="metric-label">Suricata</div>
+          <div class="metric-val red">14,422</div>
+          <div class="metric-sub">IDS rules</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">ElastAlert</div>
+          <div class="metric-val blue">4</div>
+          <div class="metric-sub">alert rules</div>
+        </div>
+      </div>
+
+      <!-- Error banner (shown when compile error) -->
+      <div class="banner err" style="flex-shrink:0">
+        <i class="ti ti-alert-circle"></i> Suricata compile error — 1 rule has invalid syntax. Rules with errors are shown in the list below.
+      </div>
+
+      <!-- Standalone filter bar between metrics and the split layout -->
+      <div class="filterbar" style="margin-bottom:4px;flex-shrink:0">
+        <i class="ti ti-search" style="font-size:14px;color:#888780;flex-shrink:0"></i>
+        <input class="search-input" placeholder="Search rules…" style="flex:1">
+        <select class="select" style="width:140px;font-size:12px">
+          <option value="">All types</option>
+          <option>Sigma</option>
+          <option>Suricata</option>
+          <option>ElastAlert</option>
+        </select>
+        <select class="select" style="width:140px;font-size:12px">
+          <option value="">All statuses</option>
+          <option>Enabled</option>
+          <option>Disabled</option>
+          <option>Error</option>
+        </select>
+        <select class="select" style="width:150px;font-size:12px">
+          <option value="">All sources</option>
+          <option>Local</option>
+          <option>ET / imported</option>
+        </select>
+        <button class="topbar-btn"><i class="ti ti-file-import" style="font-size:12px"></i> Import</button>
+        <button class="topbar-btn primary"><i class="ti ti-plus" style="font-size:12px"></i> New rule</button>
+      </div>
+
+      <!-- row2 split: rules list + editor — fills remaining height -->
+      <div class="row2" style="flex:1;min-height:300px">
+
+        <!-- Left: rule list -->
+        <div class="card" style="display:flex;flex-direction:column;overflow:hidden;min-height:300px">
+          <div class="card-header" style="flex-shrink:0">
+            <span class="card-title">Rules</span>
+            <span style="font-size:11px;color:#888780">21 shown · search to filter</span>
+          </div>
+          <div style="flex:1;overflow-y:auto;min-height:0">
+            <table class="tbl">
+              <thead>
+                <tr><th>Name</th><th></th></tr>
+              </thead>
+              <tbody>
+
+                <!-- Rule row: error state -->
+                <tr>
+                  <td style="width:100%">
+                    <div style="font-weight:500;font-size:13px;line-height:1.3">Test rule - reverse shell port</div>
+                    <div style="display:flex;align-items:center;gap:5px;margin-top:4px;flex-wrap:wrap">
+                      <span class="tag running">Enabled</span>
+                      <span class="tag running">Suricata</span>
+                      <span class="mono" style="font-size:10px;color:#888780">test.rules</span>
+                      <span style="font-size:10px;color:#aaa89e;font-family:monospace">sid:000001</span>
+                    </div>
+                  </td>
+                  <td style="white-space:nowrap"><button class="rule-btn"><i class="ti ti-pencil" style="font-size:11px"></i> Edit</button></td>
+                </tr>
+
+                <!-- ET rule (read-only, View btn) -->
+                <tr>
+                  <td style="width:100%">
+                    <div style="font-weight:500;font-size:13px;line-height:1.3">ET FTP Possible FTP Daemon Username SELECT FROM SQL Injection Attempt</div>
+                    <div style="display:flex;align-items:center;gap:5px;margin-top:4px;flex-wrap:wrap">
+                      <span class="tag running">Enabled</span>
+                      <span class="tag running">Suricata</span>
+                      <span class="tag purple">ET</span>
+                      <span class="mono" style="font-size:10px;color:#888780">emerging-ftp.rules</span>
+                      <span style="font-size:10px;color:#aaa89e;font-family:monospace">sid:2099962</span>
+                    </div>
+                  </td>
+                  <td style="white-space:nowrap"><button class="rule-btn"><i class="ti ti-eye" style="font-size:11px"></i> View</button></td>
+                </tr>
+
+                <!-- Sigma rule -->
+                <tr>
+                  <td style="width:100%">
+                    <div style="font-weight:500;font-size:13px;line-height:1.3">Mimikatz Credential Access</div>
+                    <div style="display:flex;align-items:center;gap:5px;margin-top:4px;flex-wrap:wrap">
+                      <span class="tag running">Enabled</span>
+                      <span class="tag blue">Sigma</span>
+                      <span class="mono" style="font-size:10px;color:#888780">mimikatz.yml</span>
+                    </div>
+                  </td>
+                  <td style="white-space:nowrap"><button class="rule-btn"><i class="ti ti-pencil" style="font-size:11px"></i> Edit</button></td>
+                </tr>
+
+                <!-- Disabled rule -->
+                <tr>
+                  <td style="width:100%">
+                    <div style="font-weight:500;font-size:13px;line-height:1.3">Suspicious DNS Query</div>
+                    <div style="display:flex;align-items:center;gap:5px;margin-top:4px;flex-wrap:wrap">
+                      <span class="tag warning">Disabled</span>
+                      <span class="tag running">Suricata</span>
+                      <span class="mono" style="font-size:10px;color:#888780">local.rules</span>
+                      <span style="font-size:10px;color:#aaa89e;font-family:monospace">sid:9000003</span>
+                    </div>
+                  </td>
+                  <td style="white-space:nowrap"><button class="rule-btn"><i class="ti ti-pencil" style="font-size:11px"></i> Edit</button></td>
+                </tr>
+
+                <!-- ElastAlert rule -->
+                <tr>
+                  <td style="width:100%">
+                    <div style="font-weight:500;font-size:13px;line-height:1.3">Brute Force Alert</div>
+                    <div style="display:flex;align-items:center;gap:5px;margin-top:4px;flex-wrap:wrap">
+                      <span class="tag running">Enabled</span>
+                      <span class="tag warning">Elastalert</span>
+                      <span class="mono" style="font-size:10px;color:#888780">brute_force.yml</span>
+                    </div>
+                  </td>
+                  <td style="white-space:nowrap"><button class="rule-btn"><i class="ti ti-pencil" style="font-size:11px"></i> Edit</button></td>
+                </tr>
+
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Right: rule editor -->
+        <div class="card" style="display:flex;flex-direction:column;height:100%;overflow:hidden">
+          <div class="card-header" style="flex-shrink:0">
+            <span class="card-title">Rule editor</span>
+            <span class="tag warning">Empty</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;flex:1;min-height:0">
+            <!-- Name input -->
+            <input class="setting-input" placeholder="Rule name / title"
+                   style="width:100%;box-sizing:border-box;flex-shrink:0">
+            <!-- Action buttons: Validate + Save (primary) + Delete (danger, margin-left:auto) -->
+            <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap">
+              <button class="topbar-btn"><i class="ti ti-check" style="font-size:12px"></i> Validate</button>
+              <button class="topbar-btn primary"><i class="ti ti-device-floppy" style="font-size:12px"></i> Save</button>
+              <button class="topbar-btn danger" style="margin-left:auto"><i class="ti ti-trash" style="font-size:12px"></i></button>
+            </div>
+            <!-- ACE editor (represented as dark textarea) -->
+            <textarea class="rule-code" style="flex:1;min-height:0;resize:none"
+                      spellcheck="false" placeholder="Paste or write rule YAML / Suricata rule here…"></textarea>
+            <!-- Filepath -->
+            <div class="mono" style="font-size:10px;color:#888780;flex-shrink:0">No file selected</div>
+          </div>
+        </div>
+
+      </div><!-- /.row2 -->
+    </div>
+  </div>
+</div>
+
+<script src="_nav.js"></script>
+<script>setActiveNav('rules');</script>
+</body>
+</html>

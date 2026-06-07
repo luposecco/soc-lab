@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alerts — SOC Lab</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.11.0/dist/tabler-icons.min.css">
+</head>
+<body>
+<div class="app">
+  <div class="sidebar" id="sidebar"></div>
+
+  <div class="main">
+    <!-- Topbar: title + inline filterbar (flex:1 maxWidth 580px) + refresh -->
+    <div class="topbar">
+      <span class="page-title">Alerts</span>
+      <div class="filterbar" style="flex:1;max-width:580px">
+        <input class="search-input" placeholder="Search signature, IP, rule ID…" style="flex:1">
+        <!-- dcc.Dropdown rendered as native select in mockup -->
+        <select class="select" style="width:150px;font-size:12px">
+          <option value="">All severities</option>
+          <option>Critical</option>
+          <option>High</option>
+          <option>Medium</option>
+          <option>Low</option>
+        </select>
+        <select class="select" style="width:160px;font-size:12px">
+          <option value="">All datasets</option>
+          <option>suricata.alert</option>
+          <option>alert</option>
+        </select>
+      </div>
+      <button class="topbar-btn"><i class="ti ti-refresh" style="font-size:13px"></i> Refresh</button>
+    </div>
+
+    <div class="content">
+
+      <!-- 4 metrics -->
+      <div class="metrics" id="alerts-metrics">
+        <div class="metric">
+          <div class="metric-label">Total alerts</div>
+          <div class="metric-val blue">1,284</div>
+          <div class="metric-sub">in soc-alerts</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Critical</div>
+          <div class="metric-val red">3</div>
+          <div class="metric-sub">severity 1</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">High</div>
+          <div class="metric-val amber">27</div>
+          <div class="metric-sub">severity 2</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Med / Low</div>
+          <div class="metric-val green">214 / 1,040</div>
+          <div class="metric-sub">severity 3 / 4</div>
+        </div>
+      </div>
+
+      <!-- Alert volume timeline -->
+      <div class="card" style="flex-shrink:0">
+        <div class="card-header" style="margin-bottom:8px">
+          <span class="card-title">Alert volume</span>
+          <span style="font-size:11px;color:#888780">by severity · 5-min buckets</span>
+        </div>
+        <div class="timeline-chart" style="height:64px">
+          <div style="flex:1;height:10%;background:#378ADD;border-radius:2px 2px 0 0"></div>
+          <div style="flex:1;height:20%;background:#378ADD;border-radius:2px 2px 0 0"></div>
+          <div style="flex:1;height:15%;background:#378ADD;border-radius:2px 2px 0 0"></div>
+          <div style="flex:1;height:45%;background:#378ADD;border-radius:2px 2px 0 0"></div>
+          <div style="flex:1;height:100%;background:#E24B4A;border-radius:2px 2px 0 0"></div>
+          <div style="flex:1;height:72%;background:#378ADD;border-radius:2px 2px 0 0"></div>
+          <div style="flex:1;height:55%;background:#378ADD;border-radius:2px 2px 0 0"></div>
+          <div style="flex:1;height:30%;background:#378ADD;border-radius:2px 2px 0 0"></div>
+          <div style="flex:1;height:22%;background:#378ADD;border-radius:2px 2px 0 0"></div>
+          <div style="flex:1;height:18%;background:#378ADD;border-radius:2px 2px 0 0"></div>
+          <div style="flex:1;height:12%;background:#378ADD;border-radius:2px 2px 0 0"></div>
+          <div style="flex:1;height:8%;background:#378ADD;border-radius:2px 2px 0 0"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:5px;font-size:11px;color:#888780">
+          <span>60m ago</span><span>now</span>
+        </div>
+      </div>
+
+      <!-- Alert feed — flex:1, scrollable inside -->
+      <div class="card" style="flex:1;min-height:200px;display:flex;flex-direction:column;overflow:hidden">
+        <div class="card-header">
+          <span class="card-title">Alert feed</span>
+          <span style="font-size:12px;color:#888780">Showing 50 of 1,284 alerts</span>
+        </div>
+        <div style="flex:1;overflow-y:auto;min-height:0">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th style="white-space:nowrap">Timestamp</th>
+                <th>Sev</th>
+                <th>Signature</th>
+                <th>Src → Dst</th>
+                <th>Proto</th>
+                <th>Action</th>
+                <th style="text-align:right">Dataset</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="mono" style="white-space:nowrap;font-size:11px">2026-06-06 22:14:01</td>
+                <td><span class="sev crit">Critical</span></td>
+                <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:500">ET MALWARE Cobalt Strike Beacon</td>
+                <td class="mono">10.0.0.5 → 185.220.101.3:443</td>
+                <td style="font-size:11px;color:#888780">TCP</td>
+                <td style="font-size:11px">allowed</td>
+                <td style="text-align:right"><span class="tag blue">suricata.alert</span></td>
+              </tr>
+              <tr>
+                <td class="mono" style="white-space:nowrap;font-size:11px">2026-06-06 22:13:44</td>
+                <td><span class="sev high">High</span></td>
+                <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:500">Sigma: Mimikatz Credential Access</td>
+                <td class="mono">10.0.0.12 → —</td>
+                <td style="font-size:11px;color:#888780">—</td>
+                <td style="font-size:11px">—</td>
+                <td style="text-align:right"><span class="tag blue">alert</span></td>
+              </tr>
+              <tr>
+                <td class="mono" style="white-space:nowrap;font-size:11px">2026-06-06 22:11:30</td>
+                <td><span class="sev med">Medium</span></td>
+                <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:500">ET SCAN Nmap SYN Scan</td>
+                <td class="mono">192.168.1.100 → 10.0.0.1:22</td>
+                <td style="font-size:11px;color:#888780">TCP</td>
+                <td style="font-size:11px">allowed</td>
+                <td style="text-align:right"><span class="tag blue">suricata.alert</span></td>
+              </tr>
+              <tr>
+                <td class="mono" style="white-space:nowrap;font-size:11px">2026-06-06 22:09:05</td>
+                <td><span class="sev low">Low</span></td>
+                <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:500">ET INFO DNS Query to TOR</td>
+                <td class="mono">10.0.0.7 → 8.8.8.8:53</td>
+                <td style="font-size:11px;color:#888780">UDP</td>
+                <td style="font-size:11px">allowed</td>
+                <td style="text-align:right"><span class="tag blue">suricata.alert</span></td>
+              </tr>
+              <tr>
+                <td class="mono" style="white-space:nowrap;font-size:11px">2026-06-06 22:07:18</td>
+                <td><span class="sev med">Medium</span></td>
+                <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:500">ET WEB_SERVER SQL Injection Attempt</td>
+                <td class="mono">203.0.113.42 → 10.0.0.80:80</td>
+                <td style="font-size:11px;color:#888780">TCP</td>
+                <td style="font-size:11px">allowed</td>
+                <td style="text-align:right"><span class="tag blue">suricata.alert</span></td>
+              </tr>
+              <tr>
+                <td class="mono" style="white-space:nowrap;font-size:11px">2026-06-06 22:04:55</td>
+                <td><span class="sev info">Info</span></td>
+                <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:500">Sigma: PowerShell Download Cradle</td>
+                <td class="mono">10.0.0.20 → —</td>
+                <td style="font-size:11px;color:#888780">—</td>
+                <td style="font-size:11px">—</td>
+                <td style="text-align:right"><span class="tag blue">alert</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="_nav.js"></script>
+<script>setActiveNav('alerts');</script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stack — SOC Lab</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.11.0/dist/tabler-icons.min.css">
+</head>
+<body>
+<div class="app">
+  <div class="sidebar" id="sidebar"></div>
+
+  <div class="main">
+    <!-- Topbar: title + Refresh + Stop all (danger) + Start all (success) -->
+    <div class="topbar">
+      <span class="page-title">Stack management</span>
+      <button class="topbar-btn"><i class="ti ti-refresh" style="font-size:13px"></i> Refresh</button>
+      <button class="topbar-btn danger"><i class="ti ti-player-stop" style="font-size:13px"></i> Stop all</button>
+      <button class="topbar-btn success"><i class="ti ti-player-play" style="font-size:13px"></i> Start all</button>
+    </div>
+
+    <div class="content" style="display:flex;flex-direction:column">
+
+      <div id="stack-status-banner"></div>
+
+      <!-- Service cards: row3 grid, flex-shrink:0 -->
+      <div class="row3" id="stack-cards" style="flex-shrink:0">
+
+        <!-- Elasticsearch -->
+        <div class="service-card">
+          <div class="service-header">
+            <div class="service-icon es"><i class="ti ti-database"></i></div>
+            <div><div class="service-name">Elasticsearch</div><div class="service-meta">v8.13 · :9200</div></div>
+            <span class="tag running" style="margin-left:auto">running</span>
+          </div>
+          <div class="service-stats">
+            <div class="sstat"><div class="sstat-label">Docs</div><div class="sstat-val">4.2M</div></div>
+            <div class="sstat"><div class="sstat-label">Disk</div><div class="sstat-val">2.1 GB</div></div>
+            <div class="sstat"><div class="sstat-label">Indices</div><div class="sstat-val">12</div></div>
+          </div>
+          <div class="service-actions">
+            <button class="svc-btn stop">Stop</button>
+            <button class="svc-btn">Restart</button>
+            <button class="svc-btn">Logs</button>
+          </div>
+        </div>
+
+        <!-- Kibana -->
+        <div class="service-card">
+          <div class="service-header">
+            <div class="service-icon ki"><i class="ti ti-chart-pie"></i></div>
+            <div><div class="service-name">Kibana</div><div class="service-meta">v8.13 · :5601</div></div>
+            <span class="tag running" style="margin-left:auto">running</span>
+          </div>
+          <div class="service-stats">
+            <div class="sstat"><div class="sstat-label">Data views</div><div class="sstat-val">4</div></div>
+            <div class="sstat"><div class="sstat-label">Dashboards</div><div class="sstat-val">2</div></div>
+            <div class="sstat"><div class="sstat-label">Uptime</div><div class="sstat-val green">2d 4h</div></div>
+          </div>
+          <div class="service-actions">
+            <button class="svc-btn stop">Stop</button>
+            <button class="svc-btn">Restart</button>
+            <button class="svc-btn">Logs</button>
+          </div>
+        </div>
+
+        <!-- Suricata (has 1 rule error) -->
+        <div class="service-card">
+          <div class="service-header">
+            <div class="service-icon su"><i class="ti ti-radar"></i></div>
+            <div><div class="service-name">Suricata</div><div class="service-meta">v7.0</div></div>
+            <span class="tag running" style="margin-left:auto">running</span>
+          </div>
+          <div class="service-stats">
+            <div class="sstat"><div class="sstat-label">Rules</div><div class="sstat-val">14,422</div></div>
+            <div class="sstat"><div class="sstat-label">Alerts</div><div class="sstat-val amber">27</div></div>
+            <div class="sstat"><div class="sstat-label">Errors</div><div class="sstat-val red">1</div></div>
+          </div>
+          <div class="service-actions">
+            <button class="svc-btn stop">Stop</button>
+            <button class="svc-btn">Restart</button>
+            <button class="svc-btn">Logs</button>
+          </div>
+        </div>
+
+        <!-- Filebeat -->
+        <div class="service-card">
+          <div class="service-header">
+            <div class="service-icon fb"><i class="ti ti-brand-beats"></i></div>
+            <div><div class="service-name">Filebeat</div><div class="service-meta">v8.13</div></div>
+            <span class="tag running" style="margin-left:auto">running</span>
+          </div>
+          <div class="service-stats">
+            <div class="sstat"><div class="sstat-label">Events/s</div><div class="sstat-val">142</div></div>
+            <div class="sstat"><div class="sstat-label">Queued</div><div class="sstat-val">0</div></div>
+            <div class="sstat"><div class="sstat-label">Errors</div><div class="sstat-val">0</div></div>
+          </div>
+          <div class="service-actions">
+            <button class="svc-btn stop">Stop</button>
+            <button class="svc-btn">Restart</button>
+            <button class="svc-btn">Logs</button>
+          </div>
+        </div>
+
+        <!-- ElastAlert2 -->
+        <div class="service-card">
+          <div class="service-header">
+            <div class="service-icon ea"><i class="ti ti-bell"></i></div>
+            <div><div class="service-name">ElastAlert2</div><div class="service-meta">v2.x</div></div>
+            <span class="tag running" style="margin-left:auto">running</span>
+          </div>
+          <div class="service-stats">
+            <div class="sstat"><div class="sstat-label">Rules</div><div class="sstat-val">4</div></div>
+            <div class="sstat"><div class="sstat-label">Alerts fired</div><div class="sstat-val">12</div></div>
+            <div class="sstat"><div class="sstat-label">Errors</div><div class="sstat-val">0</div></div>
+          </div>
+          <div class="service-actions">
+            <button class="svc-btn stop">Stop</button>
+            <button class="svc-btn">Restart</button>
+            <button class="svc-btn">Logs</button>
+          </div>
+        </div>
+
+        <!-- Future development (dashed card) -->
+        <div class="service-card" style="border:1.5px dashed #DDDCDA;background:#FAFAF9;opacity:0.7">
+          <div class="service-header">
+            <div class="service-icon"><i class="ti ti-plus"></i></div>
+            <div>
+              <div class="service-name">Future development</div>
+              <div class="service-meta">Zeek · Snort · YARA and other tools</div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:#888780;margin-top:8px;font-style:italic">
+            Additional tools will be added here in future releases.
+          </div>
+        </div>
+
+      </div><!-- /.row3 -->
+
+      <!-- Rules watcher card (flex-shrink:0) -->
+      <div id="stack-watcher-wrap" style="flex-shrink:0">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Rules watcher</span>
+            <span class="tag warning">Stopped</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="dot amber"></div>
+            <span style="font-size:12px;color:#5f5e5a">
+              Start the watcher to auto-compile rules when files change.
+            </span>
+            <button class="svc-btn start" style="margin-left:auto">Start watcher</button>
+          </div>
+          <!-- watcher log (short terminal, shown when running) -->
+          <!-- <div class="terminal short" style="margin-top:10px">...</div> -->
+        </div>
+      </div>
+
+      <!-- Service logs card (flex:1, fills remaining viewport height) -->
+      <div id="stack-live-output" style="flex:1;display:flex;flex-direction:column;min-height:200px">
+        <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden">
+          <div class="card-header" style="flex-shrink:0">
+            <span><span class="card-title">Service logs</span><span style="font-size:11px;color:#888780;font-weight:400"> — elastalert2</span></span>
+          </div>
+          <div class="terminal fill">
+            <span style="color:#6e7681;font-style:italic">Click 'Logs' on a service card to view output…</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="_nav.js"></script>
+<script>setActiveNav('stack');</script>
+</body>
+</html>

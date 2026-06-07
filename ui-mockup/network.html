@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Network Flows — SOC Lab</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.11.0/dist/tabler-icons.min.css">
+</head>
+<body>
+<div class="app">
+  <div class="sidebar" id="sidebar"></div>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="page-title">Network flows</span>
+      <button class="topbar-btn"><i class="ti ti-refresh" style="font-size:13px"></i> Refresh</button>
+    </div>
+
+    <div class="content">
+
+      <!-- 4 metrics: Total flows, Unique sources, Unique destinations, Top protocol -->
+      <div class="metrics" id="net-metrics">
+        <div class="metric">
+          <div class="metric-label">Total flows</div>
+          <div class="metric-val blue">8,241</div>
+          <div class="metric-sub">suricata flow events</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Unique sources</div>
+          <div class="metric-val green">34</div>
+          <div class="metric-sub">distinct source IPs</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Unique destinations</div>
+          <div class="metric-val amber">128</div>
+          <div class="metric-sub">distinct dest IPs</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Top protocol</div>
+          <div class="metric-val blue">TCP</div>
+          <div class="metric-sub">most common</div>
+        </div>
+      </div>
+
+      <!-- Flow table card (single card, no graph) -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Flow table</span>
+          <div style="display:flex;gap:8px">
+            <input class="search-input" placeholder="Search IPs…" style="width:200px;padding-left:10px">
+            <!-- dcc.Dropdown with className="select" -->
+            <select class="select" style="width:160px;font-size:12px">
+              <option value="">All protocols</option>
+              <option>TCP</option>
+              <option>UDP</option>
+              <option>ICMP</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="net-table">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Source</th>
+                <th></th><!-- arrow column -->
+                <th>Destination</th>
+                <th>Proto</th>
+                <th style="text-align:right">Bytes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="mono" style="white-space:nowrap;font-size:11px">2026-06-06 22:14:01</td>
+                <td class="mono">10.0.0.5:54321</td>
+                <td style="color:#888780;padding:0 4px">→</td>
+                <td class="mono">185.220.101.3:443</td>
+                <td style="font-size:11px">TCP</td>
+                <td style="text-align:right;font-size:11px;color:#888780">2 MB</td>
+              </tr>
+              <tr>
+                <td class="mono" style="white-space:nowrap;font-size:11px">2026-06-06 22:14:00</td>
+                <td class="mono">10.0.0.7:62041</td>
+                <td style="color:#888780;padding:0 4px">→</td>
+                <td class="mono">8.8.8.8:53</td>
+                <td style="font-size:11px">UDP</td>
+                <td style="text-align:right;font-size:11px;color:#888780">128 B</td>
+              </tr>
+              <tr>
+                <td class="mono" style="white-space:nowrap;font-size:11px">2026-06-06 22:13:58</td>
+                <td class="mono">192.168.1.100:41022</td>
+                <td style="color:#888780;padding:0 4px">→</td>
+                <td class="mono">10.0.0.1:22</td>
+                <td style="font-size:11px">TCP</td>
+                <td style="text-align:right;font-size:11px;color:#888780">12 KB</td>
+              </tr>
+              <tr>
+                <td class="mono" style="white-space:nowrap;font-size:11px">2026-06-06 22:13:45</td>
+                <td class="mono">10.0.0.12:55214</td>
+                <td style="color:#888780;padding:0 4px">→</td>
+                <td class="mono">1.1.1.1:443</td>
+                <td style="font-size:11px">TCP</td>
+                <td style="text-align:right;font-size:11px;color:#888780">340 KB</td>
+              </tr>
+              <tr>
+                <td class="mono" style="white-space:nowrap;font-size:11px">2026-06-06 22:13:30</td>
+                <td class="mono">10.0.0.5:54322</td>
+                <td style="color:#888780;padding:0 4px">→</td>
+                <td class="mono">185.220.101.3:443</td>
+                <td style="font-size:11px">TCP</td>
+                <td style="text-align:right;font-size:11px;color:#888780">1.2 MB</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="net-footer" style="font-size:11px;color:#888780;padding-top:8px">
+          Showing 100 of 8,241 flows
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="_nav.js"></script>
+<script>setActiveNav('network');</script>
+</body>
+</html>
