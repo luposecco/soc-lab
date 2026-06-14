@@ -23,38 +23,36 @@
         <!-- Left col: Log file card + Upload options card -->
         <div class="col">
 
-          <!-- Log file card -->
           <div class="card" style="flex-shrink:0">
             <div class="card-header"><span class="card-title">Log file</span></div>
 
-            <!-- Upload zone -->
             <div class="upload-zone">
               <div class="upload-icon"><i class="ti ti-file-import" style="font-size:24px;color:#888780"></i></div>
               <div class="upload-title">Drop a log file or click to browse</div>
               <div class="upload-sub">.log .json .csv .cef .txt .gz .zip .evtx</div>
             </div>
 
-            <!-- File placeholder (dashed box) -->
-            <div style="margin-top:10px;display:flex;align-items:center;gap:8px;padding:8px 10px;background:#F9F9F8;border-radius:6px;border:1px dashed #DDDCDA">
-              <i class="ti ti-file-off" style="font-size:15px;color:#c0bfbb;flex-shrink:0"></i>
+            <!-- File selected -->
+            <div style="margin-top:10px;display:flex;align-items:center;gap:8px;padding:8px 10px;background:#EAF3DE;border-radius:6px;border:1px solid rgba(59,109,17,0.2)">
+              <i class="ti ti-file-text" style="font-size:15px;color:#3B6D11;flex-shrink:0"></i>
               <div style="flex:1">
-                <div style="font-size:12px;font-weight:500;color:#888780">No file selected</div>
-                <div style="font-size:11px;color:#b0afac">Drop a file above or select from folder below</div>
+                <div style="font-size:12px;font-weight:500;color:#1a1a18">windows_events.evtx</div>
+                <div style="font-size:11px;color:#888780">8.4 MB · from data/ingest/</div>
               </div>
+              <button class="rule-btn">Clear</button>
             </div>
 
             <div style="border-top:0.5px solid rgba(0,0,0,0.07);margin:14px 0"></div>
 
-            <!-- From data/ingest/ section -->
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
               <span style="font-size:11px;font-weight:600;color:#888780;text-transform:uppercase;letter-spacing:0.05em">From data/ingest/</span>
               <button class="rule-btn"><i class="ti ti-refresh" style="font-size:11px"></i> Refresh</button>
             </div>
             <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid rgba(0,0,0,0.06)">
-              <i class="ti ti-file-text" style="font-size:13px;color:#888780;flex-shrink:0"></i>
-              <span class="mono" style="font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">windows_events.evtx</span>
+              <i class="ti ti-file-text" style="font-size:13px;color:#3B6D11;flex-shrink:0"></i>
+              <span class="mono" style="font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#3B6D11;font-weight:500">windows_events.evtx</span>
               <span style="font-size:11px;color:#888780;flex-shrink:0">8.4 MB</span>
-              <button class="rule-btn">Select</button>
+              <button class="rule-btn" style="background:#EAF3DE;border-color:rgba(59,109,17,0.3);color:#3B6D11">Selected</button>
             </div>
             <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid rgba(0,0,0,0.06)">
               <i class="ti ti-file-text" style="font-size:13px;color:#888780;flex-shrink:0"></i>
@@ -63,13 +61,12 @@
               <button class="rule-btn">Select</button>
             </div>
             <button class="rule-btn" style="margin-top:8px;width:100%;justify-content:center;display:inline-flex;align-items:center;line-height:1">
-              <i class="ti ti-folder-open" style="font-size:13px;vertical-align:middle;margin-right:5px"></i>
-              <span style="vertical-align:middle">Show all files</span>
+              <i class="ti ti-folder-open" style="font-size:13px;margin-right:5px"></i>
+              Show all files
             </button>
 
             <div style="border-top:0.5px solid rgba(0,0,0,0.07);margin:14px 0"></div>
 
-            <!-- Pipeline file upload (compact, optional) -->
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
               <span style="font-size:11px;font-weight:600;color:#888780;text-transform:uppercase;letter-spacing:0.05em">Pipeline file</span>
               <span class="tag blue">optional</span>
@@ -81,7 +78,6 @@
             </div>
           </div>
 
-          <!-- Upload options card -->
           <div class="card" style="flex-shrink:0">
             <div class="card-header"><span class="card-title">Upload options</span></div>
             <div style="display:flex;flex-direction:column;gap:12px">
@@ -89,8 +85,8 @@
               <div>
                 <div style="font-size:11px;color:#888780;margin-bottom:4px">Ingest pipeline</div>
                 <select class="select" style="width:100%;font-size:12px">
-                  <option value="">None (auto-detect)</option>
                   <option>windows-eventlog [Windows]</option>
+                  <option value="">None (auto-detect)</option>
                   <option>apache-access [DevOps/Web]</option>
                   <option>nginx-access [DevOps/Web]</option>
                   <option>syslog [Linux]</option>
@@ -114,7 +110,7 @@
               </label>
 
               <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
-                <input type="checkbox">
+                <input type="checkbox" checked>
                 <div>
                   <div class="setting-name">Shift timestamps to now</div>
                   <div class="setting-desc">Rebase event timestamps to current time</div>
@@ -133,37 +129,77 @@
           </div>
         </div>
 
-        <!-- Right col: Upload results (top, fixed height) + Available pipelines (with search) -->
+        <!-- Right col -->
         <div class="col">
 
-          <!-- Upload results — fixed height 274px -->
-          <div class="card" style="height:274px;display:flex;flex-direction:column">
+          <!-- Upload results — populated -->
+          <div class="card table-panel-card" style="flex-shrink:0;max-height:240px">
             <div class="card-header" style="flex-shrink:0">
               <span class="card-title">Upload results</span>
-              <span style="font-size:11px;color:#888780"></span>
+              <span style="font-size:11px;color:#888780">3 recent</span>
             </div>
-            <div style="flex:1;min-height:0;overflow-y:auto">
-              <div style="font-size:12px;color:#888780;padding:12px 0">No upload results yet.</div>
+            <div class="table-panel-body">
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th>File</th>
+                    <th>Pipeline</th>
+                    <th style="text-align:right">Docs</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <div style="font-size:12px;font-weight:500" class="mono">windows_events.evtx</div>
+                      <div style="font-size:11px;color:#888780">8.4 MB · shift on</div>
+                    </td>
+                    <td style="font-size:11px;color:#888780">windows-eventlog</td>
+                    <td style="text-align:right;font-size:12px;font-weight:500">24,801</td>
+                    <td style="font-size:11px;color:#888780;white-space:nowrap">Jun 13 10:55</td>
+                    <td><span class="tag unknown">Done</span></td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div style="font-size:12px;font-weight:500" class="mono">apache_access.log</div>
+                      <div style="font-size:11px;color:#888780">2.1 MB · shift off</div>
+                    </td>
+                    <td style="font-size:11px;color:#888780">apache-access</td>
+                    <td style="text-align:right;font-size:12px;font-weight:500">8,340</td>
+                    <td style="font-size:11px;color:#888780;white-space:nowrap">Jun 12 15:20</td>
+                    <td><span class="tag unknown">Done</span></td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div style="font-size:12px;font-weight:500" class="mono">firewall.log.gz</div>
+                      <div style="font-size:11px;color:#888780">510 KB · AI pipeline</div>
+                    </td>
+                    <td style="font-size:11px;color:#888780">AI-generated</td>
+                    <td style="text-align:right;font-size:12px;font-weight:500">3,012</td>
+                    <td style="font-size:11px;color:#888780;white-space:nowrap">Jun 11 09:04</td>
+                    <td><span class="tag unknown">Done</span></td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
 
-          <!-- Available pipelines — fixed height, scrolls inside -->
-          <div class="card" style="height:628px;display:flex;flex-direction:column">
+          <!-- Available pipelines -->
+          <div class="card table-panel-card" style="flex:1">
             <div class="card-header" style="flex-shrink:0">
               <span class="card-title">Available pipelines</span>
               <span style="font-size:11px;color:#888780">by vendor</span>
             </div>
-            <!-- Vendor search input -->
             <input class="setting-input" placeholder="Search vendors…"
                    style="width:100%;box-sizing:border-box;padding:8px 12px;font-size:13px;margin-bottom:10px;flex-shrink:0">
-            <!-- Vendor table (scrollable) -->
-            <div style="flex:1;min-height:0;overflow-y:auto">
+            <div class="table-panel-body">
               <table class="tbl">
-                <thead style="position:sticky;top:0;background:#fff;z-index:1">
+                <thead>
                   <tr><th>Vendor</th><th>Category</th><th style="text-align:right">Pipelines</th></tr>
                 </thead>
                 <tbody>
-                  <tr><td style="font-weight:500;font-size:13px">1Password</td><td><span class="tag purple">Identity</span></td><td style="text-align:right;font-size:12px;color:#888780">3</td></tr>
+                  <tr><td style="font-weight:500;font-size:13px">1Password</td><td><span class="tag blue">Identity</span></td><td style="text-align:right;font-size:12px;color:#888780">3</td></tr>
                   <tr><td style="font-weight:500;font-size:13px">Abnormal Security</td><td><span class="tag warning">Email</span></td><td style="text-align:right;font-size:12px;color:#888780">6</td></tr>
                   <tr><td style="font-weight:500;font-size:13px">Activemq</td><td><span class="tag running">DevOps/Web</span></td><td style="text-align:right;font-size:12px;color:#888780">5</td></tr>
                   <tr><td style="font-weight:500;font-size:13px">Admin By Request Epm</td><td><span class="tag unknown">Other</span></td><td style="text-align:right;font-size:12px;color:#888780">2</td></tr>

@@ -172,33 +172,33 @@ If FastAPI is the public backend boundary, `core/` is the actual engine room.
 ## High-Level Architecture Diagram
 
 ```text
-                           +----------------------+
-                           |      Web Browser     |
-                           |  Dash UI on :8050    |
-                           +----------+-----------+
+                           ┌──────────────────────┐
+                           │      Web Browser     │
+                           │  Dash UI on :8050    │
+                           └──────────┬───────────┘
                                       |
                                       | HTTP
                                       v
-                           +----------------------+
-                           |       FastAPI        |
-                           |   API on :8000       |
-                           +----------+-----------+
+                           ┌──────────────────────┐
+                           │       FastAPI        │
+                           │   API on :8000       │
+                           └──────────┬───────────┘
                                       |
                                       | Python calls
                                       v
-        +---------------------------------------------------------------+
-        |                         core/* services                       |
-        | stack | elastic | capture | ingest | rules | enrich | helpers |
-        +-------------------+----------------------+--------------------+
+        ┌───────────────────────────────────────────────────────────────┐
+        │                         core/* services                       │
+        │ stack | elastic | capture | ingest | rules | enrich | helpers │
+        └───────────────────┬──────────────────────┬────────────────────┘
                             |                      |
                             |                      |
-              +-------------+----+      +----------+-----------------+
-              |                  |      |                            |
+              ┌─────────────┴────┐      ┌──────────┴─────────────────┐
+              │                  │      │                            │
               v                  v      v                            v
-      +----------------+   +----------------------------+   +---------------+
-      | Docker Compose |   | Elasticsearch and Kibana   |   | local files   |
-      | service ctrl   |   | search, ingest, aliases    |   | config/data   |
-      +----------------+   +----------------------------+   +---------------+
+      ┌────────────────┐   ┌────────────────────────────┐   ┌───────────────┐
+      │ Docker Compose │   │ Elasticsearch and Kibana   │   │ local files   │
+      │ service ctrl   │   │ search, ingest, aliases    │   │ config/data   │
+      └────────────────┘   └────────────────────────────┘   └───────────────┘
 ```
 
 ## Data-Centric View

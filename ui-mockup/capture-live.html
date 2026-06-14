@@ -6,6 +6,31 @@
   <title>Live Capture — SOC Lab</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.11.0/dist/tabler-icons.min.css">
+  <style>
+    @keyframes pulse-ring {
+      0%   { box-shadow: 0 0 0 0 rgba(59,109,17,0.5); }
+      70%  { box-shadow: 0 0 0 6px rgba(59,109,17,0); }
+      100% { box-shadow: 0 0 0 0 rgba(59,109,17,0); }
+    }
+    .dot.pulse { animation: pulse-ring 1.6s ease-out infinite; }
+    .live-badge { display:flex;align-items:center;gap:6px;padding:4px 10px;background:#EAF3DE;color:#3B6D11;border-radius:20px;font-size:12px;font-weight:600; }
+
+    /* Segment timeline */
+    .seg-timeline { display:flex;gap:2px;align-items:flex-end;height:32px; }
+    .seg-block { flex:1;border-radius:2px 2px 0 0;background:#E6F1FB;border:0.5px solid rgba(24,95,165,0.2);min-width:5px; }
+    .seg-block.alert { background:#FAEEDA;border-color:rgba(186,117,23,0.3); }
+    .seg-block.crit  { background:#FCEBEB;border-color:rgba(226,75,74,0.3); }
+    .seg-block.now   { background:#185FA5;opacity:0.8; }
+
+    /* Sparkline bars */
+    .sparkbar-wrap { display:flex;align-items:flex-end;gap:2px;height:32px; }
+    .sparkbar { width:7px;border-radius:2px 2px 0 0;background:#185FA5;opacity:0.65; }
+    .sparkbar.now { opacity:1; }
+
+    /* Protocol bars */
+    .proto-bar-bg { flex:1;height:5px;background:rgba(0,0,0,0.07);border-radius:3px;overflow:hidden; }
+    .proto-bar-fill { height:100%;border-radius:3px; }
+  </style>
 </head>
 <body>
 <div class="app">
@@ -14,90 +39,201 @@
   <div class="main">
     <div class="topbar">
       <span class="page-title">Live capture</span>
+      <div class="live-badge">
+        <span class="dot green pulse"></span>
+        Running — en0
+      </div>
       <button class="topbar-btn"><i class="ti ti-refresh" style="font-size:13px"></i> Refresh</button>
     </div>
 
-    <div id="live-banner"></div>
-
     <div class="content" style="display:flex;flex-direction:column;gap:14px;flex:1">
 
-      <!-- Top row: Capture options (300px) + Capture sessions (flex:1) -->
-      <div style="display:flex;gap:14px">
+      <!-- Metrics -->
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-label">Session duration</div>
+          <div class="metric-val blue">14m 37s</div>
+          <div class="metric-sub">started 11:12</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Segments replayed</div>
+          <div class="metric-val">87</div>
+          <div class="metric-sub">10 s rotation</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Suricata docs</div>
+          <div class="metric-val">24,316</div>
+          <div class="metric-sub">+1,241 last segment</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Alerts triggered</div>
+          <div class="metric-val red">14</div>
+          <div class="metric-sub">3 critical</div>
+        </div>
+      </div>
 
-        <!-- Left: capture options (fixed 300px) -->
-        <div class="card" style="width:300px;flex-shrink:0">
-          <div class="card-header">
+      <!-- Two-column row: options + sessions -->
+      <div style="display:flex;gap:14px;min-height:0">
+
+        <!-- Left: capture options -->
+        <div class="card" style="width:280px;flex-shrink:0;display:flex;flex-direction:column;gap:12px">
+          <div class="card-header" style="margin-bottom:0">
             <span class="card-title">Capture options</span>
-            <span class="tag unknown">Idle</span>
-            <!-- Running state: <span class="tag running">Running</span> -->
+            <span class="tag running">Running</span>
           </div>
 
-          <div style="display:flex;flex-direction:column;gap:12px">
+          <div>
+            <div style="font-size:11px;color:#888780;margin-bottom:5px">Network interface</div>
+            <select class="select" style="width:100%;font-size:13px" disabled>
+              <option>en0</option>
+            </select>
+          </div>
 
-            <!-- Network interface -->
+          <div style="border-top:0.5px solid rgba(0,0,0,0.07)"></div>
+
+          <div>
+            <div style="font-size:11px;color:#888780;margin-bottom:5px">File rotation (seconds)</div>
+            <input type="number" class="setting-input" value="10" style="width:100%;box-sizing:border-box" disabled>
+          </div>
+
+          <label style="display:flex;align-items:center;gap:12px;opacity:0.5">
+            <input type="checkbox" checked disabled>
             <div>
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
-                <div style="font-size:11px;color:#888780">Network interface</div>
-                <button class="rule-btn"><i class="ti ti-refresh" style="font-size:11px"></i> Refresh</button>
+              <div style="font-size:13px;font-weight:500">Keep mode</div>
+              <div style="font-size:11px;color:#888780">Preserve existing data between captures</div>
+            </div>
+          </label>
+
+          <div style="padding:10px 12px;background:#F1F5F9;border-radius:8px;font-size:12px;color:#5f5e5a">
+            <i class="ti ti-info-circle" style="vertical-align:-2px;margin-right:6px;color:#6B9DD8"></i>
+            dumpcap → auto-replays each segment through Suricata IDS
+          </div>
+
+          <!-- Segment timeline -->
+          <div>
+            <div style="font-size:11px;color:#888780;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em">Segment history</div>
+            <div class="seg-timeline">
+              <div class="seg-block" style="height:40%"></div>
+              <div class="seg-block" style="height:55%"></div>
+              <div class="seg-block alert" style="height:70%"></div>
+              <div class="seg-block" style="height:60%"></div>
+              <div class="seg-block" style="height:50%"></div>
+              <div class="seg-block crit" style="height:90%"></div>
+              <div class="seg-block" style="height:65%"></div>
+              <div class="seg-block alert" style="height:75%"></div>
+              <div class="seg-block" style="height:70%"></div>
+              <div class="seg-block" style="height:80%"></div>
+              <div class="seg-block" style="height:85%"></div>
+              <div class="seg-block crit" style="height:100%"></div>
+              <div class="seg-block" style="height:78%"></div>
+              <div class="seg-block" style="height:82%"></div>
+              <div class="seg-block now" style="height:45%"></div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:5px;font-size:10px;color:#888780">
+              <span><span style="display:inline-block;width:7px;height:7px;background:#FAEEDA;border-radius:1px;margin-right:3px"></span>Alerts</span>
+              <span><span style="display:inline-block;width:7px;height:7px;background:#FCEBEB;border-radius:1px;margin-right:3px"></span>Critical</span>
+              <span><span style="display:inline-block;width:7px;height:7px;background:#185FA5;border-radius:1px;margin-right:3px"></span>Now</span>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:8px;margin-top:auto">
+            <button class="topbar-btn success" style="flex:1;justify-content:center;padding:10px" disabled>
+              <i class="ti ti-player-record" style="font-size:14px"></i> Start
+            </button>
+            <button class="topbar-btn danger" style="flex:1;justify-content:center;padding:10px">
+              <i class="ti ti-player-stop" style="font-size:14px"></i> Stop
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: current session stats + sessions table -->
+        <div style="flex:1;display:flex;flex-direction:column;gap:14px;min-width:0">
+
+        <!-- Current session stats -->
+        <div class="card" style="flex-shrink:0">
+          <div class="card-header" style="margin-bottom:12px">
+            <span class="card-title">Current session</span>
+            <span style="font-size:11px;color:#888780">seg #87 · en0</span>
+          </div>
+          <div style="display:flex;gap:0;align-items:stretch">
+
+            <!-- Packet rate + sparkline -->
+            <div style="flex:1;padding-right:16px;border-right:0.5px solid rgba(0,0,0,0.08)">
+              <div style="font-size:11px;color:#888780;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em">Packets / sec</div>
+              <div style="font-size:24px;font-weight:600;letter-spacing:-0.02em;color:#185FA5;line-height:1">1,840</div>
+              <div style="font-size:11px;color:#888780;margin-bottom:8px">avg last segment</div>
+              <div class="sparkbar-wrap">
+                <div class="sparkbar" style="height:35%"></div>
+                <div class="sparkbar" style="height:50%"></div>
+                <div class="sparkbar" style="height:45%"></div>
+                <div class="sparkbar" style="height:62%"></div>
+                <div class="sparkbar" style="height:70%"></div>
+                <div class="sparkbar" style="height:80%"></div>
+                <div class="sparkbar" style="height:75%"></div>
+                <div class="sparkbar" style="height:90%"></div>
+                <div class="sparkbar" style="height:85%"></div>
+                <div class="sparkbar" style="height:100%"></div>
+                <div class="sparkbar" style="height:88%"></div>
+                <div class="sparkbar" style="height:78%"></div>
+                <div class="sparkbar now" style="height:60%"></div>
               </div>
-              <select class="select" style="width:100%;font-size:13px">
-                <option>lo0</option>
-                <option>en0</option>
-                <option>eth0</option>
-              </select>
             </div>
 
-            <div style="border-top:0.5px solid rgba(0,0,0,0.07)"></div>
-
-            <!-- File rotation -->
-            <div>
-              <div style="font-size:11px;color:#888780;margin-bottom:5px">File rotation (seconds)</div>
-              <input type="number" class="setting-input" value="10"
-                     style="width:100%;box-sizing:border-box">
+            <!-- Throughput + dropped -->
+            <div style="flex:1;padding:0 16px;border-right:0.5px solid rgba(0,0,0,0.08)">
+              <div style="font-size:11px;color:#888780;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em">Captured</div>
+              <div style="font-size:24px;font-weight:600;letter-spacing:-0.02em;line-height:1">2.1 GB</div>
+              <div style="font-size:11px;color:#888780;margin-bottom:14px">~146 MB / min</div>
+              <div style="font-size:11px;color:#888780;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em">Dropped pkts</div>
+              <div style="font-size:20px;font-weight:600;letter-spacing:-0.02em;color:#854F0B;line-height:1">0.4%</div>
+              <div style="font-size:11px;color:#888780">kernel buffer</div>
             </div>
 
-            <!-- Keep mode checkbox -->
-            <label style="display:flex;align-items:center;gap:12px;cursor:pointer">
-              <input type="checkbox">
-              <div>
-                <div style="font-size:13px;font-weight:500">Keep mode</div>
-                <div style="font-size:11px;color:#888780">Preserve existing data between captures</div>
+            <!-- Protocol breakdown -->
+            <div style="flex:1;padding-left:16px">
+              <div style="font-size:11px;color:#888780;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em">Protocols</div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;align-items:center;gap:7px;font-size:12px">
+                  <span style="width:32px;font-weight:500">TCP</span>
+                  <div class="proto-bar-bg"><div class="proto-bar-fill" style="width:72%;background:#185FA5"></div></div>
+                  <span style="width:28px;text-align:right;color:#888780">72%</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:7px;font-size:12px">
+                  <span style="width:32px;font-weight:500">UDP</span>
+                  <div class="proto-bar-bg"><div class="proto-bar-fill" style="width:18%;background:#639922"></div></div>
+                  <span style="width:28px;text-align:right;color:#888780">18%</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:7px;font-size:12px">
+                  <span style="width:32px;font-weight:500">DNS</span>
+                  <div class="proto-bar-bg"><div class="proto-bar-fill" style="width:6%;background:#BA7517"></div></div>
+                  <span style="width:28px;text-align:right;color:#888780">6%</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:7px;font-size:12px">
+                  <span style="width:32px;font-weight:500">ICMP</span>
+                  <div class="proto-bar-bg"><div class="proto-bar-fill" style="width:4%;background:#6B9DD8"></div></div>
+                  <span style="width:28px;text-align:right;color:#888780">4%</span>
+                </div>
               </div>
-            </label>
-
-            <!-- Info box -->
-            <div style="padding:10px 12px;background:#F1F5F9;border-radius:8px;font-size:12px;color:#5f5e5a">
-              <i class="ti ti-info-circle" style="vertical-align:-2px;margin-right:6px;color:#6B9DD8"></i>
-              dumpcap → auto-replays each segment through Suricata IDS
-            </div>
-
-            <!-- Start / Stop buttons side by side -->
-            <div style="display:flex;gap:8px">
-              <button class="topbar-btn success" style="flex:1;justify-content:center;padding:10px">
-                <i class="ti ti-player-record" style="font-size:14px"></i> Start capture
-              </button>
-              <button class="topbar-btn danger" style="flex:1;justify-content:center;padding:10px" disabled>
-                <i class="ti ti-player-stop" style="font-size:14px"></i> Stop
-              </button>
             </div>
 
           </div>
         </div>
 
-        <!-- Right: capture sessions (flex:1) -->
-        <div class="card" style="flex:1;display:flex;flex-direction:column;min-width:0">
+        <!-- Sessions table -->
+        <div class="card table-panel-card" style="flex:1">
           <div class="card-header" style="flex-shrink:0">
             <span class="card-title">Capture sessions</span>
-            <span style="font-size:11px;color:#888780">2 sessions</span>
+            <span style="font-size:11px;color:#888780">3 sessions</span>
           </div>
-          <div style="overflow-y:auto;max-height:260px">
+          <div class="table-panel-body">
             <table class="tbl">
-              <thead style="position:sticky;top:0;background:#fff;z-index:1">
+              <thead>
                 <tr>
                   <th>Interface</th>
                   <th>Duration</th>
                   <th style="text-align:right">Rotation</th>
                   <th style="text-align:center">Keep</th>
+                  <th style="text-align:right">Segments</th>
                   <th style="text-align:right">Docs</th>
                   <th style="text-align:right">Alerts</th>
                   <th>Date</th>
@@ -107,22 +243,35 @@
               <tbody>
                 <tr>
                   <td style="font-weight:500;font-size:13px">en0</td>
-                  <td style="font-size:12px;color:#888780">1m 12s</td>
-                  <td style="font-size:11px;color:#888780;text-align:right">—</td>
+                  <td style="font-size:12px;color:#888780">14m 37s</td>
+                  <td style="font-size:11px;color:#888780;text-align:right">10 s</td>
+                  <td style="text-align:center"><i class="ti ti-check" style="color:#3B6D11"></i></td>
+                  <td style="font-size:12px;text-align:right;font-weight:500">87</td>
+                  <td style="font-size:12px;text-align:right;font-weight:500">24,316</td>
+                  <td style="font-size:12px;text-align:right"><b style="color:#A32D2D">14</b></td>
+                  <td style="font-size:11px;color:#888780;white-space:nowrap">Jun 13 11:12</td>
+                  <td><span class="tag running">Running</span></td>
+                </tr>
+                <tr>
+                  <td style="font-weight:500;font-size:13px">en0</td>
+                  <td style="font-size:12px;color:#888780">22m 04s</td>
+                  <td style="font-size:11px;color:#888780;text-align:right">10 s</td>
                   <td style="text-align:center"><span style="color:#b0afac">—</span></td>
-                  <td style="font-size:12px;text-align:right"><span style="color:#b0afac">—</span></td>
-                  <td style="font-size:12px;text-align:right"><span style="color:#b0afac">—</span></td>
-                  <td style="font-size:11px;color:#888780;white-space:nowrap">Jun 07 16:13</td>
+                  <td style="font-size:12px;text-align:right;font-weight:500">132</td>
+                  <td style="font-size:12px;text-align:right;font-weight:500">38,891</td>
+                  <td style="font-size:12px;text-align:right"><b style="color:#A32D2D">7</b></td>
+                  <td style="font-size:11px;color:#888780;white-space:nowrap">Jun 13 10:44</td>
                   <td><span class="tag unknown">Done</span></td>
                 </tr>
                 <tr>
                   <td style="font-weight:500;font-size:13px">en0</td>
-                  <td style="font-size:12px;color:#888780">0m 9s</td>
-                  <td style="font-size:11px;color:#888780;text-align:right">—</td>
+                  <td style="font-size:12px;color:#888780">5m 12s</td>
+                  <td style="font-size:11px;color:#888780;text-align:right">30 s</td>
                   <td style="text-align:center"><span style="color:#b0afac">—</span></td>
+                  <td style="font-size:12px;text-align:right;font-weight:500">10</td>
+                  <td style="font-size:12px;text-align:right;font-weight:500">4,120</td>
                   <td style="font-size:12px;text-align:right"><span style="color:#b0afac">—</span></td>
-                  <td style="font-size:12px;text-align:right"><span style="color:#b0afac">—</span></td>
-                  <td style="font-size:11px;color:#888780;white-space:nowrap">Jun 07 16:01</td>
+                  <td style="font-size:11px;color:#888780;white-space:nowrap">Jun 13 08:30</td>
                   <td><span class="tag unknown">Done</span></td>
                 </tr>
               </tbody>
@@ -130,16 +279,26 @@
           </div>
         </div>
 
-      </div><!-- /top row -->
+        </div><!-- /right col -->
 
-      <!-- Full-width Live output card (flex:1, fills remaining height) -->
-      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0">
+      </div>
+
+      <!-- Live output terminal -->
+      <div class="card panel-card panel-fill" style="flex:1">
         <div class="card-header" style="flex-shrink:0">
           <span class="card-title">Live output</span>
-          <button class="rule-btn">Clear</button>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span style="font-size:11px;color:#888780">seg #87 · replaying…</span>
+            <button class="rule-btn">Clear</button>
+          </div>
         </div>
         <div class="terminal fill">
-          <span style="color:#6e7681;font-style:italic">Start a capture to see live output…</span>
+<span style="color:#6e7681">[11:26:27]</span> <span style="color:#6B9DD8">→</span> dumpcap: writing segment 86 (en0, 10 s rotation)
+<span style="color:#6e7681">[11:26:37]</span> <span style="color:#639922">✓</span> segment 86 replayed — +1,241 docs indexed
+<span style="color:#6e7681">[11:26:37]</span> <span style="color:#BA7517">⚑</span> <span style="color:#BA7517">ALERT</span> ET SCAN Nmap Scripting Engine User-Agent Detected
+<span style="color:#6e7681">[11:26:37]</span>   rule: 2024364 · priority: 2 · 192.168.1.42:56201 → 10.0.0.1:80
+<span style="color:#6e7681">[11:26:47]</span> <span style="color:#6B9DD8">→</span> dumpcap: writing segment 87 (en0, 10 s rotation)
+<span style="color:#6e7681">[11:26:52]</span> <span style="color:#639922">✓</span> segment 87 replayed — +1,108 docs indexed<span style="display:inline-block;width:7px;height:12px;background:#539bf5;vertical-align:-2px;margin-left:3px"></span>
         </div>
       </div>
 

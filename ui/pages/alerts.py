@@ -5,7 +5,7 @@ from typing import Any
 import dash
 from dash import Input, Output, callback, dcc, html
 
-from ui.helpers import api_get, error_banner, metric_card, sev_badge, topbar
+from ui.helpers import api_get, error_banner, lpanel, ltable, metric_card, sev_badge, topbar
 
 dash.register_page(__name__, path="/alerts")
 
@@ -114,10 +114,10 @@ def layout() -> html.Div:
             html.Button([html.I(className="ti ti-refresh", style={"fontSize": "13px"}), " Refresh"],
                         id="alerts-refresh-btn", className="topbar-btn", n_clicks=0),
         ),
-        html.Div(className="content", children=[
-            html.Div(id="alerts-metrics", children=_stats_metrics(stats)),
+        html.Div(className="content", style={}, children=[
+            html.Div(id="alerts-metrics", children=_stats_metrics(stats), style={"flexShrink": "0"}),
 
-            html.Div(className="card", style={"flexShrink": "0"}, children=[
+            html.Div(className="card", style={**lpanel(min_h=140, shrink=True)}, children=[
                 html.Div(className="card-header", style={"marginBottom": "8px"}, children=[
                     html.Span("Alert volume", className="card-title"),
                     html.Span("by severity · 5-min buckets", style={"fontSize": "11px", "color": "#888780"}),
@@ -128,17 +128,14 @@ def layout() -> html.Div:
                          children=[html.Span("60m ago"), html.Span("now")]),
             ]),
 
-            # alert feed — flex:1 fills remaining viewport height, table scrolls inside
-            html.Div(className="card", style={"flex": "1", "minHeight": "200px", "display": "flex",
-                                               "flexDirection": "column", "overflow": "hidden"}, children=[
+            html.Div(className="card", style={**ltable(fill=True, min_h=300), "marginBottom": "20px"}, children=[
                 html.Div(className="card-header", children=[
                     html.Span("Alert feed", className="card-title"),
                     html.Span(id="alerts-footer",
                               children=f"Showing {len(data.get('alerts', []))} of {data.get('total', 0):,} alerts",
                               style={"fontSize": "12px", "color": "#888780"}),
                 ]),
-                html.Div(id="alerts-table", children=_alerts_table(data.get("alerts", [])),
-                         style={"flex": "1", "overflowY": "auto", "minHeight": "0"}),
+                html.Div(id="alerts-table", children=_alerts_table(data.get("alerts", [])), className="table-panel-body"),
             ]),
         ]),
     ])

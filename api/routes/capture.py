@@ -26,10 +26,50 @@ _HISTORY_FILE = lambda: repo_root() / ".soc-lab" / "capture-history.json"
 _LIVE_PID_FILE = lambda: repo_root() / ".soc-lab" / "capture-live.pid"
 _LIVE_LOG_FILE = lambda: repo_root() / ".soc-lab" / "capture-live.log"
 _LIVE_SESSIONS_FILE = lambda: repo_root() / ".soc-lab" / "capture-live-sessions.json"
+_REPLAY_STATE_FILE = lambda: repo_root() / ".soc-lab" / "capture-replay-state.json"
+_OUTPUT_TTL_SECS = 600
 
 # ── async replay job store ────────────────────────────────────────────────────
 _replay_jobs: dict[str, dict] = {}  # job_id → {lines, done, result, error}
 _REPLAY_JOB_ID = "current"  # single-slot: only one replay at a time
+
+
+def _empty_replay_state() -> dict:
+    return {"running": False, "done": True, "lines": [], "result": None, "error": None, "updated_at": None}
+
+
+def _save_replay_state(state: dict) -> None:
+    path = _REPLAY_STATE_FILE()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    state = {**state, "updated_at": time.time()}
+    path.write_text(json.dumps(state, indent=2))
+
+
+def _load_replay_state() -> dict:
+    path = _REPLAY_STATE_FILE()
+    if not path.exists():
+        return _empty_replay_state()
+    try:
+        state = json.loads(path.read_text())
+    except Exception:
+        return _empty_replay_state()
+    if not isinstance(state, dict):
+        return _empty_replay_state()
+    updated_at = state.get("updated_at")
+    if state.get("done") and isinstance(updated_at, (int, float)) and time.time() - float(updated_at) > _OUTPUT_TTL_SECS:
+        return _empty_replay_state()
+    return {
+        "running": state.get("running", False),
+        "done": state.get("done", True),
+        "lines": state.get("lines", []),
+        "result": state.get("result"),
+        "error": state.get("error"),
+        "updated_at": updated_at,
+    }
+
+
+def _clear_replay_state() -> None:
+    _REPLAY_STATE_FILE().unlink(missing_ok=True)
 
 
 # ── history ───────────────────────────────────────────────────────────────────
@@ -154,6 +194,13 @@ def _run_replay_job(target_pcap: str, keep: bool, now: bool, pcap_name: str) -> 
     job = _replay_jobs[_REPLAY_JOB_ID]
     def log(line: str) -> None:
         job["lines"].append(line)
+        _save_replay_state({
+            "running": not job.get("done", False),
+            "done": job.get("done", False),
+            "lines": job["lines"],
+            "result": job.get("result"),
+            "error": job.get("error"),
+        })
 
     try:
         log(f"[INFO] keep={keep}  now={now}  pcap={pcap_name}")
@@ -245,6 +292,7 @@ def _run_replay_job(target_pcap: str, keep: bool, now: bool, pcap_name: str) -> 
         if proc.returncode != 0:
             log(f"[ERROR] Suricata exited with code {proc.returncode}")
             job["error"] = "Suricata replay failed"
+            _save_replay_state({"running": False, "done": False, "lines": job["lines"], "result": job.get("result"), "error": job["error"]})
             return
 
         if now:
@@ -287,12 +335,15 @@ def _run_replay_job(target_pcap: str, keep: bool, now: bool, pcap_name: str) -> 
             "status": "done",
         })
         job["result"] = result
+        _save_replay_state({"running": False, "done": False, "lines": job["lines"], "result": job["result"], "error": job.get("error")})
 
     except Exception as exc:
         log(f"[ERROR] {exc}")
         job["error"] = str(exc)
+        _save_replay_state({"running": False, "done": False, "lines": job["lines"], "result": job.get("result"), "error": job["error"]})
     finally:
         job["done"] = True
+        _save_replay_state({"running": False, "done": True, "lines": job["lines"], "result": job.get("result"), "error": job.get("error")})
 
 
 @router.post("/replay")
@@ -310,7 +361,9 @@ def capture_replay(request: CaptureReplayRequest) -> dict:
             candidate = repo_root() / "data" / "pcap" / request.pcap
             target_pcap = str(candidate.relative_to(repo_root())) if candidate.exists() else request.pcap
 
+        _clear_replay_state()
         _replay_jobs[_REPLAY_JOB_ID] = {"lines": [], "done": False, "result": None, "error": None}
+        _save_replay_state({"running": True, "done": False, "lines": [], "result": None, "error": None})
         t = threading.Thread(
             target=_run_replay_job,
             args=(target_pcap, request.keep, request.now, Path(target_pcap).name),
@@ -325,15 +378,25 @@ def capture_replay(request: CaptureReplayRequest) -> dict:
 @router.get("/replay/status")
 def capture_replay_status() -> dict:
     job = _replay_jobs.get(_REPLAY_JOB_ID)
-    if not job:
-        return {"running": False, "done": True, "lines": [], "result": None, "error": None}
-    return {
-        "running": not job["done"],
-        "done": job["done"],
-        "lines": job["lines"],
-        "result": job.get("result"),
-        "error": job.get("error"),
-    }
+    if job:
+        state = {
+            "running": not job["done"],
+            "done": job["done"],
+            "lines": job["lines"],
+            "result": job.get("result"),
+            "error": job.get("error"),
+        }
+        _save_replay_state(state)
+        return state
+    state = _load_replay_state()
+    return {k: state.get(k) for k in ("running", "done", "lines", "result", "error")}
+
+
+@router.post("/replay/clear")
+def capture_replay_clear() -> dict:
+    _replay_jobs.pop(_REPLAY_JOB_ID, None)
+    _clear_replay_state()
+    return {"cleared": True}
 
 
 # ── upload ────────────────────────────────────────────────────────────────────
@@ -588,8 +651,19 @@ def live_log(lines: int = Query(default=100)) -> dict:
     if not log_file.exists():
         return {"log": ""}
     try:
+        status = live_status()
+        if not status.get("running") and time.time() - log_file.stat().st_mtime > _OUTPUT_TTL_SECS:
+            return {"log": ""}
         text = log_file.read_text(errors="replace")
         tail = "\n".join(text.splitlines()[-lines:])
         return {"log": tail}
     except Exception:
         return {"log": ""}
+
+
+@router.post("/live/clear")
+def live_clear() -> dict:
+    log_file = _LIVE_LOG_FILE()
+    log_file.parent.mkdir(parents=True, exist_ok=True)
+    log_file.write_text("")
+    return {"cleared": True}

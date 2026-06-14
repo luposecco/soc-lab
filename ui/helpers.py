@@ -35,6 +35,96 @@ def api_delete(path: str) -> Any:
         return {"error": str(exc)}
 
 
+# ── Layout helpers ─────────────────────────────────────────────────────────────
+# These return style dicts. All layout lives here in Python; CSS handles only
+# visual properties (colors, borders, radius, shadows, hover, animations).
+
+_G = "14px"   # standard gap
+_MW = "300px" # min column width for auto-fit grids
+
+
+def lrow(
+    min_col: str = _MW,
+    gap: str = _G,
+    fill: bool = False,
+    shrink: bool = False,
+    cols: int | None = None,
+) -> dict:
+    """
+    Auto-fit grid row. Columns wrap to next row when they hit min_col.
+    fill=True: grows to fill remaining flex height and distributes that
+               height to rows via grid-auto-rows, so cards inside fill too.
+    shrink=True: flexShrink:0 — stays at natural height, doesn't squish.
+    cols=N: force exactly N equal columns instead of auto-fit.
+    """
+    template = (
+        f"repeat({cols}, 1fr)"
+        if cols
+        else f"repeat(auto-fit, minmax({min_col}, 1fr))"
+    )
+    s: dict = {"display": "grid", "gridTemplateColumns": template, "gap": gap, "alignItems": "stretch"}
+    if fill:
+        s |= {"flex": "1", "minHeight": "0", "gridAutoRows": "minmax(0, 1fr)"}
+    elif shrink:
+        s["flexShrink"] = "0"
+    return s
+
+
+def lcol(gap: str = _G, fill: bool = False, min_w: str = _MW) -> dict:
+    """Flex column for stacking cards vertically inside a grid cell."""
+    s: dict = {
+        "display": "flex",
+        "flexDirection": "column",
+        "gap": gap,
+        "minWidth": min_w,
+        "minHeight": "0",
+        "overflow": "hidden",
+    }
+    if fill:
+        s["flex"] = "1"
+    return s
+
+
+def lpanel(min_h: int = 200, fill: bool = False, shrink: bool = False) -> dict:
+    """
+    Layout for a general card panel (flex column so children can fill it).
+    Use as style= alongside className="card".
+    """
+    s: dict = {"display": "flex", "flexDirection": "column", "minHeight": f"{min_h}px"}
+    if fill:
+        s["flex"] = "1"
+    if shrink:
+        s["flexShrink"] = "0"
+    return s
+
+
+def ltable(min_h: int = 260, fill: bool = False, shrink: bool = False) -> dict:
+    """
+    Layout for a table card panel — overflow hidden so .table-panel-body scrolls.
+    Use as style= alongside className="card".
+    """
+    s: dict = {
+        "display": "flex",
+        "flexDirection": "column",
+        "minHeight": f"{min_h}px",
+        "overflow": "hidden",
+    }
+    if fill:
+        s["flex"] = "1"
+    if shrink:
+        s["flexShrink"] = "0"
+    return s
+
+
+def lterm(fill: bool = False, height: int = 200, min_h: int = 140) -> dict:
+    """Height/flex for .terminal elements."""
+    if fill:
+        return {"flex": "1", "minHeight": "300px"}
+    return {"height": f"{height}px", "minHeight": f"{min_h}px"}
+
+
+# ── UI helpers ─────────────────────────────────────────────────────────────────
+
 def topbar(title: str, *extra: Any) -> html.Div:
     return html.Div(
         className="topbar",
@@ -100,9 +190,7 @@ def colorize_log(lines: list[str] | str) -> list:
     if isinstance(lines, str):
         lines = lines.splitlines()
 
-    # noise patterns to dim (Python import warnings, etc.)
     _noise_re = re.compile(r"NotOpenSSLWarning|warnings\.warn|site-packages|^\s+$")
-    # ISO / datetime timestamp at start of line
     _ts_re = re.compile(
         r"^(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:[.,]\d+)?(?:Z|[+-]\d{2}:?\d{2})?|\[\d{2}:\d{2}:\d{2}\])"
     )
@@ -111,16 +199,12 @@ def colorize_log(lines: list[str] | str) -> list:
     for line in lines:
         if not line.strip():
             continue
-
-        # dim noisy lines
         if _noise_re.search(line):
             result.append(html.Div(html.Span(line, className="t-gray")))
             continue
 
         children: list = []
         rest = line
-
-        # strip leading timestamp
         m = _ts_re.match(rest)
         if m:
             children.append(html.Span(m.group(0) + " ", className="t-gray"))
@@ -128,12 +212,9 @@ def colorize_log(lines: list[str] | str) -> list:
 
         up = rest.upper()
 
-        # [*] bullet (elastalert2 / suricata startup)
         if rest.startswith("[*]"):
             children.append(html.Span("[*]", className="t-blue"))
             rest = rest[3:]
-
-        # bracket level: [INFO] [WARN] [ERROR] [DEBUG]
         elif rest.startswith("[INFO]") or rest.startswith("[info]"):
             children.append(html.Span("[INFO]", className="t-green"))
             rest = rest[6:]
@@ -148,16 +229,12 @@ def colorize_log(lines: list[str] | str) -> list:
         elif up.startswith("[DEBUG"):
             children.append(html.Span("[DEBUG]", className="t-gray"))
             rest = rest[7:]
-
-        # Python logging: "LEVEL   message" or "LEVEL - message"
         elif re.match(r"^(INFO|WARNING|ERROR|DEBUG|CRITICAL)\b", up):
             lvl = re.match(r"^(\w+)", rest).group(1)
             cls = {"INFO": "t-green", "WARNING": "t-yellow", "WARN": "t-yellow",
                    "ERROR": "t-red", "CRITICAL": "t-red", "DEBUG": "t-gray"}.get(lvl.upper(), "")
             children.append(html.Span(lvl, className=cls))
             rest = rest[len(lvl):]
-
-        # " - LEVEL - " in middle of line (Python logging format)
         elif " - INFO - " in rest or " - INFO " in rest:
             children.append(html.Span(rest, className="t-green"))
             rest = ""
@@ -167,8 +244,6 @@ def colorize_log(lines: list[str] | str) -> list:
         elif " - ERROR" in rest or " - CRITICAL" in rest:
             children.append(html.Span(rest, className="t-red"))
             rest = ""
-
-        # success / positive keywords
         elif re.match(r"^(Successfully|Success|Done|OK\b)", rest, re.I):
             children.append(html.Span(rest, className="t-green"))
             rest = ""

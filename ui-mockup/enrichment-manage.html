@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enrichment Management - SOC Lab</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.11.0/dist/tabler-icons.min.css">
+</head>
+<body>
+<div class="app">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main">
+    <div class="topbar">
+      <span class="page-title">Enrichment Management</span>
+      <div class="pages">
+        <a class="page-btn" href="enrichment.html">Overview</a>
+        <a class="page-btn active" href="enrichment-manage.html">Management</a>
+        <a class="page-btn" href="enrichment-rollback.html">Rollback</a>
+      </div>
+      <button class="topbar-btn"><i class="ti ti-refresh" style="font-size:13px"></i> Refresh</button>
+    </div>
+    <div class="content">
+      <div class="row2 enrich-layout">
+        <div class="col">
+          <div class="card"><div class="card-header"><span class="card-title">Configured enrichments</span><span class="card-action">select one to manage</span></div><div class="list-rows">
+            <div class="list-row"><div class="list-main"><div class="list-title">Example Risk</div><div class="list-desc">Risk fields for matching alerts.</div><div class="list-meta"><span class="meta-pill">play_batch</span><span class="meta-pill">lab, customer-prod</span></div></div></div>
+            <div class="list-row"><div class="list-main"><div class="list-title">Selected Alert Annotator</div><div class="list-desc">Single-item run with params.</div><div class="list-meta"><span class="meta-pill">play_single</span><span class="meta-pill">lab</span></div></div></div>
+            <div class="list-row"><div class="list-main"><div class="list-title">External IoC Sync</div><div class="list-desc">Periodic derived-document sync.</div><div class="list-meta"><span class="meta-pill">play_periodic</span><span class="meta-pill">customer-prod</span></div></div></div>
+          </div></div>
+        </div>
+        <div class="col">
+          <div class="card">
+            <div class="card-header"><span class="card-title">Management pane</span><span class="card-action mono">enrichments.yml</span></div>
+            <div class="tabs"><button class="tab active">Config</button><button class="tab">Runtime</button></div>
+            <div class="result-row"><span class="result-key">Name</span><span class="result-val">Example Risk</span></div>
+            <div class="result-row"><span class="result-key">Script</span><span class="result-val">scripts/example_enrichment.py</span></div>
+            <div class="result-row"><span class="result-key">Targets</span><span class="result-val">lab, customer-prod</span></div>
+            <div class="result-row"><span class="result-key">Type</span><span class="result-val">play_batch</span></div>
+            <div class="result-row"><span class="result-key">Enabled</span><span><span class="tag running">true</span></span></div>
+            <div class="terminal short" style="margin-top:12px; height:96px;"><div><span class="t-blue">example_risk:</span></div><div>  <span class="t-gray">targets:</span> [lab, customer-prod]</div><div>  <span class="t-gray">enabled:</span> true</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="_nav.js"></script>
+<script>setActiveNav('enrichment');</script>
+</body>
+</html>

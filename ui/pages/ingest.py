@@ -5,7 +5,7 @@ from typing import Any
 import dash
 from dash import Input, Output, State, callback, ctx, dcc, html
 
-from ui.helpers import api_get, api_post, error_banner, topbar
+from ui.helpers import api_get, api_post, error_banner, lcol, lpanel, lrow, ltable, topbar
 
 dash.register_page(__name__, path="/logs")
 
@@ -56,6 +56,30 @@ def _vendors_table(vendors: list[dict]) -> html.Table | html.Div:
         html.Td(str(v["count"]), style={"textAlign": "right", "fontSize": "12px", "color": "#888780"}),
     ]) for v in vendors]
     return html.Table([header, html.Tbody(rows)], className="tbl")
+
+
+def _vendor_family(name: str) -> str:
+    families = {
+        "apache": "Apache", "aws": "AWS", "azure": "Azure", "cisco": "Cisco", "cloudflare": "Cloudflare",
+        "elastic": "Elastic", "fortinet": "Fortinet", "google": "Google", "ibm": "IBM", "microsoft": "Microsoft",
+        "nginx": "Nginx", "okta": "Okta", "oracle": "Oracle", "palo": "Palo Alto", "ti": "Threat Intel",
+    }
+    key = name.lower().split()[0]
+    return families.get(key, name)
+
+
+def _condense_vendors(vendors: list[dict]) -> list[dict]:
+    grouped: dict[str, dict[str, Any]] = {}
+    for vendor in vendors:
+        family = _vendor_family(vendor.get("vendor", ""))
+        row = grouped.setdefault(family, {"vendor": family, "count": 0, "categories": set()})
+        row["count"] += int(vendor.get("count", 0))
+        row["categories"].add(vendor.get("category", "Other"))
+    result = []
+    for row in grouped.values():
+        categories = sorted(c for c in row["categories"] if c)
+        result.append({"vendor": row["vendor"], "count": row["count"], "category": categories[0] if len(categories) == 1 else f"{len(categories)} types"})
+    return sorted(result, key=lambda item: (-item["count"], item["vendor"]))
 
 
 def _pipeline_options(pipelines: list[dict]) -> list[dict]:
@@ -126,7 +150,7 @@ def layout() -> html.Div:
     pipelines_data = api_get("/api/capture/pipelines")
     pipelines = pipelines_data.get("pipelines", []) if isinstance(pipelines_data, dict) else []
     vendors_data = api_get("/api/capture/pipelines/vendors")
-    vendors = vendors_data.get("vendors", []) if isinstance(vendors_data, dict) else []
+    vendors = _condense_vendors(vendors_data.get("vendors", []) if isinstance(vendors_data, dict) else [])
     log_files_resp = api_get("/api/capture/logs/files")
     log_files = log_files_resp.get("files", []) if isinstance(log_files_resp, dict) else []
 
@@ -136,16 +160,17 @@ def layout() -> html.Div:
         _logs_overlay(log_files),
         html.Div(
             className="content",
+            style={"paddingBottom": "20px"},
             children=[
                 html.Div(
-                    className="row2",
+                    style=lrow(),
                     children=[
 
                         # ── left col ────────────────────────────────────────
-                        html.Div(className="col", children=[
+                        html.Div(style=lcol(), children=[
 
                             # file drop + folder pick card
-                            html.Div(className="card", style={"flexShrink": "0"}, children=[
+                             html.Div(className="card", style=lpanel(min_h=300, shrink=True), children=[
                                 html.Div(className="card-header", children=[html.Span("Log file", className="card-title")]),
 
                                 dcc.Upload(
@@ -200,7 +225,7 @@ def layout() -> html.Div:
                             ]),
 
                             # upload options — compact, no overflow needed
-                            html.Div(className="card", style={"flexShrink": "0"}, children=[
+                             html.Div(className="card", style=lpanel(fill=True, min_h=240), children=[
                                 html.Div(className="card-header", children=[html.Span("Upload options", className="card-title")]),
                                 html.Div(style={"display": "flex", "flexDirection": "column", "gap": "12px"}, children=[
                                     html.Div([
@@ -245,32 +270,28 @@ def layout() -> html.Div:
                         ]),
 
                         # ── right col ────────────────────────────────────────
-                        html.Div(className="col", children=[
+                        html.Div(style=lcol(), children=[
 
-                            # results card — fixed height, scrollable
-                            html.Div(className="card", style={"height": "274px", "display": "flex", "flexDirection": "column"}, children=[
+                            html.Div(className="card", style=ltable(fill=True, min_h=180), children=[
                                 html.Div(className="card-header", style={"flexShrink": "0"}, children=[
                                     html.Span("Upload results", className="card-title"),
                                     html.Span(id="logs-result-count", style={"fontSize": "11px", "color": "#888780"}),
                                 ]),
-                                html.Div(id="logs-results", children=_results_table([]),
-                                         style={"flex": "1", "minHeight": "0", "overflowY": "auto"}),
+                                html.Div(id="logs-results", children=_results_table([]), className="table-panel-body"),
                             ]),
 
-                            # available pipelines — fixed height, vendors table scrolls inside
-                            html.Div(className="card", style={"height": "628.5px", "display": "flex", "flexDirection": "column"}, children=[
+                            html.Div(className="card", style={**ltable(min_h=220, shrink=True), "maxHeight": "550px"}, children=[
                                 html.Div(className="card-header", children=[
                                     html.Span("Available pipelines", className="card-title"),
-                                    html.Span("by vendor", style={"fontSize": "11px", "color": "#888780"}),
+                                    html.Span("grouped by vendor family", style={"fontSize": "11px", "color": "#888780"}),
                                 ]),
                                 dcc.Input(
                                     id="logs-vendor-search", placeholder="Search vendors…",
                                     debounce=True, className="setting-input",
                                     style={"width": "100%", "boxSizing": "border-box", "padding": "8px 12px",
-                                           "fontSize": "13px", "marginBottom": "10px"},
+                                           "fontSize": "13px", "marginBottom": "10px", "flexShrink": "0"},
                                 ),
-                                html.Div(id="logs-vendors-table", children=_vendors_table(vendors),
-                                         style={"flex": "1", "minHeight": "0", "overflowY": "auto"}),
+                                html.Div(id="logs-vendors-table", children=_vendors_table(vendors), className="table-panel-body"),
                             ]),
                         ]),
                     ],
@@ -281,10 +302,6 @@ def layout() -> html.Div:
         dcc.Store(id="logs-pipeline-store", data=None),
         dcc.Store(id="logs-all-vendors", data=vendors),
     ])
-
-
-# ── store uploaded log file ────────────────────────────────────────────────────
-
 @callback(
     Output("logs-file-store", "data"),
     Output("logs-file-name", "children"),
@@ -296,10 +313,6 @@ def _store_upload(contents, filename):
     if not contents:
         return None, _file_placeholder()
     return {"content": contents, "filename": filename}, _file_loaded_badge(filename, "uploaded")
-
-
-# ── folder pick ────────────────────────────────────────────────────────────────
-
 def _file_loaded_badge(name: str, sub: str) -> html.Div:
     return html.Div(style={"display": "flex", "alignItems": "center", "gap": "8px", "padding": "8px 10px",
                             "background": "#F1F5F9", "borderRadius": "6px"}, children=[
@@ -421,7 +434,7 @@ def _store_pipeline_upload(contents, filename):
     prevent_initial_call=False,
 )
 def _filter_vendors(search, vendors):
-    vendors = vendors or []
+    vendors = _condense_vendors(vendors or [])
     q = (search or "").lower()
     if q:
         vendors = [v for v in vendors if q in v["vendor"].lower() or q in v["category"].lower()]

@@ -68,7 +68,7 @@ The enrichment subsystem spans three logical areas.
 ### Public script-author import surface
 
 ```text
-soc_enrich/
+enrich_sdk/
 └── __init__.py
 ```
 
@@ -121,7 +121,7 @@ data/enrichments/scripts/
 They import the SDK like this:
 
 ```python
-from soc_enrich import EnrichmentContext
+from enrich_sdk import EnrichmentContext
 ```
 
 They may declare metadata like this:
@@ -332,13 +332,13 @@ Dash / API
    v
 runner loads config
    |
-   +-> chooses target cluster(s)
-   +-> imports script
-   +-> creates EnrichmentContext
+   ├─ chooses target cluster(s)
+   ├─ imports script
+   └─ creates EnrichmentContext
    v
 script runs against target ES cluster
    |
-   +-> reads and writes target docs there
+   └─ reads and writes target docs there
    v
 audit record written separately to central lab cluster
 ```

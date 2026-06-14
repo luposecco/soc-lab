@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import time
 from typing import Any
 
 import dash
 from dash import Input, Output, State, ALL, callback, ctx, dcc, html
 
-from ui.helpers import api_get, api_post as _api_post_helper, colorize_log
+from ui.helpers import api_get, api_post as _api_post_helper, colorize_log, lrow
 
 dash.register_page(__name__, path="/stack")
 
@@ -19,6 +20,7 @@ def _topbar() -> html.Div:
         className="topbar",
         children=[
             html.Span("Stack management", className="page-title"),
+            html.Span(id="stack-cache-age", className="tag blue"),
             html.Button([html.I(className="ti ti-refresh", style={"fontSize": "13px"}), " Refresh"], id="stack-refresh-btn", className="topbar-btn"),
             html.Button([html.I(className="ti ti-player-stop", style={"fontSize": "13px"}), " Stop all"], id="stack-stop-all-btn", className="topbar-btn danger"),
             html.Button([html.I(className="ti ti-player-play", style={"fontSize": "13px"}), " Start all"], id="stack-start-all-btn", className="topbar-btn success"),
@@ -128,23 +130,34 @@ def _live_output(selected_service: str, logs: str) -> html.Div:
                 children=[html.Span([html.Span("Service logs", className="card-title"),
                                      html.Span(f" — {selected_service}", style={"fontSize": "11px", "color": "#888780", "fontWeight": "400"})])],
             ),
-            html.Div(terminal_children, className="terminal fill"),
+            html.Div(terminal_children, className="terminal fill", style={"minHeight": "0"}),
         ],
     )
 
 
-def _snapshot(selected_service: str = "elastalert2") -> tuple[list[dict[str, Any]], str, str]:
+def _format_cache_age(meta: dict[str, Any]) -> str:
+    source = meta.get("source", "none")
+    updated_at = meta.get("updated_at")
+    if updated_at is None:
+        return "Stats cache unavailable"
+    age_int = max(0, int(round(time.time() - float(updated_at))))
+    label = f"Stats cache {age_int}s old"
+    return f"{label} ({source})"
+
+
+def _snapshot(selected_service: str = "elastalert2") -> tuple[list[dict[str, Any]], str, str, dict[str, Any]]:
     data = api_get("/api/stack/services")
     all_cards = data.get("cards", []) if isinstance(data, dict) else []
+    cache_meta = data.get("stats_cache", {}) if isinstance(data, dict) else {}
     # exclude logstash — not in use
     cards = [c for c in all_cards if c.get("service") != "logstash"]
     logs_resp = api_get(f"/api/stack/logs/{selected_service}")
     logs = logs_resp.get("logs", "") if isinstance(logs_resp, dict) else ""
-    return cards, selected_service, logs
+    return cards, selected_service, logs, cache_meta
 
 
 def layout() -> html.Div:
-    cards, selected_service, logs = _snapshot()
+    cards, selected_service, logs, cache_meta = _snapshot()
     watcher = api_get("/api/rules/watcher")
     if isinstance(watcher, dict) and watcher.get("error"):
         watcher = {"running": False}
@@ -153,12 +166,14 @@ def layout() -> html.Div:
 
     return html.Div([
         _topbar(),
-        html.Div(className="content", style={"display": "flex", "flexDirection": "column"}, children=[
+        html.Div(className="content", style={"display": "flex", "flexDirection": "column", "paddingTop": "4px", "paddingBottom": "20px"}, children=[
             html.Div(id="stack-status-banner"),
+            dcc.Store(id="stack-cache-age-store", data=cache_meta),
             dcc.Store(id="stack-selected-service", data=selected_service),
             dcc.Interval(id="stack-poll", interval=15000, n_intervals=0),
-            html.Div(id="stack-cards", className="row3", style={"flexShrink": "0"}, children=service_children),
-            html.Div(id="stack-watcher-wrap", style={"flexShrink": "0"}, children=_watcher_card(watcher)),
+            dcc.Interval(id="stack-cache-age-poll", interval=1000, n_intervals=0),
+            html.Div(id="stack-cards", style={**lrow(min_col="265px", shrink=True)}, children=service_children),
+            html.Div(id="stack-watcher-wrap", style={"flexShrink": "0", "minHeight": "0"}, children=_watcher_card(watcher)),
             html.Div(id="stack-live-output",
                      style={"flex": "1", "display": "flex", "flexDirection": "column", "minHeight": "200px"},
                      children=_live_output(selected_service, logs)),
@@ -172,6 +187,7 @@ def layout() -> html.Div:
     Output("stack-selected-service", "data"),
     Output("stack-status-banner", "children"),
     Output("stack-watcher-wrap", "children"),
+    Output("stack-cache-age-store", "data"),
     Input("stack-poll", "n_intervals"),
     Input("stack-refresh-btn", "n_clicks"),
     Input("stack-start-all-btn", "n_clicks"),
@@ -215,13 +231,22 @@ def refresh_stack_page(_poll, _refresh, _start_all, _stop_all, _service_clicks, 
             banner = [html.Div(result.get("error", f"{service} restart triggered"), className="card")]
             selected_service = service
 
-    cards, selected_service, logs = _snapshot(selected_service)
+    cards, selected_service, logs, cache_meta = _snapshot(selected_service)
     watcher = api_get("/api/rules/watcher")
     if isinstance(watcher, dict) and watcher.get("error"):
         watcher = {"running": False}
 
     service_children = [_service_card(card) for card in cards] + [_future_dev_card()]
-    return service_children, _live_output(selected_service, logs), selected_service, banner, _watcher_card(watcher)
+    return service_children, _live_output(selected_service, logs), selected_service, banner, _watcher_card(watcher), cache_meta
+
+
+@callback(
+    Output("stack-cache-age", "children"),
+    Input("stack-cache-age-store", "data"),
+    Input("stack-cache-age-poll", "n_intervals"),
+)
+def _render_cache_age(meta: dict[str, Any] | None, _tick: int):
+    return _format_cache_age(meta or {})
 
 
 @callback(

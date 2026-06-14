@@ -31,9 +31,9 @@ def alerts_list(
         if q:
             must.append({"query_string": {"query": q, "default_operator": "AND"}})
         if dataset:
-            must.append({"term": {"event.dataset": dataset}})
+            must.append({"term": {"event.dataset.keyword": dataset}})
         if severity and severity in _SEV_MAP:
-            must.append({"term": {"alert.severity": _SEV_MAP[severity]}})
+            must.append({"term": {"rule.severity": _SEV_MAP[severity]}})
         query: dict[str, Any] = {"match_all": {}} if not must else {"bool": {"must": must}}
         result = es.options(ignore_status=[404]).search(
             index="soc-alerts",
@@ -76,10 +76,11 @@ def alerts_stats() -> dict:
         es = _es()
         result = es.options(ignore_status=[404]).search(
             index="soc-alerts",
+            query={"match_all": {}},
             size=0,
             aggs={
-                "by_severity": {"terms": {"field": "alert.severity", "size": 10}},
-                "by_dataset": {"terms": {"field": "event.dataset", "size": 10}},
+                "by_severity": {"terms": {"field": "rule.severity", "size": 10}},
+                "by_dataset": {"terms": {"field": "event.dataset.keyword", "size": 10}},
             },
         )
         total = result.get("hits", {}).get("total", {}).get("value", 0)

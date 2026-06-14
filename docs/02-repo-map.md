@@ -19,7 +19,7 @@ data/           Rules, pipelines, enrichments, sample ingest files, PCAP input
 docker/         Container entrypoint scripts
 docs/           Main documentation set
 runtime/        Runtime logs and generated status files
-soc_enrich/     Public enrichment SDK package surface
+enrich_sdk/    Public enrichment SDK package surface
 ui/             Dash web UI
 .soc-lab/       Runtime PID files and local web process logs
 compose.yml     Docker Compose stack definition
@@ -303,9 +303,9 @@ Enrichment configuration and user scripts.
 
 - `config/clusters.yml` - attached/managed cluster definitions
 - `config/enrichments.yml` - enrichment routing configuration
-- `scripts/` - enrichment scripts written against `soc_enrich`
+- `scripts/` - enrichment scripts written against `enrich_sdk`
 
-## `soc_enrich/`
+## `enrich_sdk/`
 
 This is the public import surface for the enrichment SDK.
 
@@ -314,10 +314,10 @@ Right now it is intentionally small.
 Example intended usage:
 
 ```python
-from soc_enrich import EnrichmentContext
+from enrich_sdk import EnrichmentContext
 ```
 
-The implementation lives in `core/enrich/`, but `soc_enrich/` is the user-facing package name.
+The implementation lives in `core/enrich/`, but `enrich_sdk/` is the user-facing package name.
 
 ## `runtime/`
 
@@ -366,7 +366,7 @@ core/
 If you want to work on enrichment:
 
 ```text
-soc_enrich/
+enrich_sdk/
 core/enrich/
 data/enrichments/
 api/routes/enrichment.py
@@ -394,7 +394,7 @@ This distinction matters a lot.
 - `ui/`
 - `config/`
 - `docker/`
-- `soc_enrich/`
+- `enrich_sdk/`
 - `docs/`
 - `data/enrichments/`
 - `data/rules/`

@@ -5,7 +5,7 @@ from typing import Any
 import dash
 from dash import Input, Output, State, callback, dcc, html
 
-from ui.helpers import api_delete, api_get, api_post, error_banner, topbar
+from ui.helpers import api_delete, api_get, api_post, error_banner, lpanel, ltable, topbar
 
 dash.register_page(__name__, path="/aliases")
 
@@ -199,10 +199,7 @@ def _all_indices_tab(all_indices: list[dict]) -> html.Div:
             html.Td(size, style={"textAlign": "right", "fontSize": "12px", "color": "#888780"}),
         ]))
 
-    return html.Div(
-        html.Table([header, html.Tbody(rows)], className="tbl"),
-        className="detail-card-scroll",
-    )
+    return html.Div(html.Table([header, html.Tbody(rows)], className="tbl"), className="table-panel-body")
 
 
 def _detail_card(entry: dict[str, Any] | None, active_tab: str, all_indices: list[dict] | None = None) -> html.Div:
@@ -231,7 +228,7 @@ def _detail_card(entry: dict[str, Any] | None, active_tab: str, all_indices: lis
     if active_tab == "indices":
         body = _all_indices_tab(all_indices or [])
     else:
-        body = html.Div(className="alias-card-body", children=[
+        body = html.Div(className="alias-card-body detail-card-scroll", children=[
             html.Div(className="setting-row", children=[
                 html.Div(className="setting-label", children=[html.Div("Name", className="setting-name"), html.Div(entry.get("alias", ""), className="setting-desc mono")]),
                 html.Button("Locked" if not entry.get("manageable", True) else "Managed", className="svc-btn", disabled=not entry.get("manageable", True)),
@@ -251,12 +248,12 @@ def _templates_card(templates: list[dict[str, Any]]) -> html.Div:
     for row in templates:
         lines.append(f"{row.get('template', '')}\n  alias: {row.get('alias', '')}\n  pattern: {row.get('pattern', '')}\n")
     content = "\n".join(lines) if lines else "No managed alias templates."
-    return html.Div(className="card fill-card", style={"padding": "12px 14px"}, children=[
+    return html.Div(className="card", style={**lpanel(fill=True, min_h=400), "padding": "12px 14px", "overflow": "hidden"}, children=[
         html.Div(style={"display": "flex", "justifyContent": "space-between", "alignItems": "center", "marginBottom": "10px"}, children=[
             html.Span("Managed templates", style={"fontSize": "13px", "fontWeight": "500"}),
             html.Span("Elasticsearch index templates", style={"fontSize": "11px", "color": "#888780"}),
         ]),
-        html.Div(content, className="terminal fill", style={"fontSize": "11px", "whiteSpace": "pre-wrap"}),
+        html.Div(content, className="terminal fill", style={"fontSize": "11px", "whiteSpace": "pre-wrap", "minHeight": "0", "overflowX": "hidden", "wordBreak": "break-word"}),
     ])
 
 
@@ -305,12 +302,12 @@ def layout() -> html.Div:
             "Aliases",
             html.Button([html.I(className="ti ti-refresh", style={"fontSize": "13px"}), " Refresh"], id="aliases-refresh-btn", className="topbar-btn"),
         ),
-        html.Div(className="content", children=[
+        html.Div(className="content", style={}, children=[
             html.Div(id="aliases-banner"),
-            html.Div(id="aliases-metrics", className="metrics cols3"),
-            html.Div(className="alias-layout", children=[
-                html.Div(className="alias-stack", children=[
-                    html.Div(className="card inventory-card", children=[
+            html.Div(id="aliases-metrics", className="metrics cols3", style={"flexShrink": "0"}),
+            html.Div(style={"display": "flex", "gap": "14px", "flex": "1"}, children=[
+                html.Div(style={"display": "flex", "flexDirection": "column", "gap": "14px", "flex": "1", "minWidth": "300px"}, children=[
+                    html.Div(className="card", style={**ltable(fill=True, min_h=360), "maxHeight": "440px"}, children=[
                         html.Div(className="card-header", children=[html.Span("Alias inventory", className="card-title"), html.Span("auto-refresh", className="card-action")]),
                         html.Div(id="alias-tabs", className="tabs"),
                         html.Div(className="inventory-toolbar", children=[
@@ -320,9 +317,9 @@ def layout() -> html.Div:
                     ]),
                     _create_form(),
                 ]),
-                html.Div(className="alias-stack", children=[
-                    html.Div(id="aliases-detail-card"),
-                    html.Div(id="aliases-templates-card", className="fill-card-wrapper"),
+                html.Div(style={"display": "flex", "flexDirection": "column", "gap": "14px", "flex": "1", "minWidth": "0", "minHeight": "0"}, children=[
+                    html.Div(id="aliases-detail-card", style={"flexShrink": "0"}),
+                    html.Div(id="aliases-templates-card", style={"flex": "1", "minHeight": "0", "display": "flex", "flexDirection": "column"}),
                 ]),
             ]),
         ]),

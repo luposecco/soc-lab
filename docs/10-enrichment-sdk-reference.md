@@ -16,19 +16,19 @@ It explains not just what methods exist, but:
 ## Public Import
 
 ```python
-from soc_enrich import EnrichmentContext
+from enrich_sdk import EnrichmentContext
 ```
 
 Why this import path exists:
 
 - user scripts should not import internal implementation modules directly
-- `soc_enrich` is the public API surface
+- `enrich_sdk` is the public API surface
 - the internal implementation may evolve while the public import path stays stable
 
 ## Minimal Script Skeleton
 
 ```python
-from soc_enrich import EnrichmentContext
+from enrich_sdk import EnrichmentContext
 
 ENRICHMENT_META = {
     "type": "play_batch",
@@ -50,7 +50,7 @@ What this means operationally:
 Single-item or param-driven version:
 
 ```python
-from soc_enrich import EnrichmentContext
+from enrich_sdk import EnrichmentContext
 
 ENRICHMENT_META = {
     "type": "play_single",
@@ -607,7 +607,7 @@ Why this split exists:
 ### Pattern: single selected alert
 
 ```python
-from soc_enrich import EnrichmentContext
+from enrich_sdk import EnrichmentContext
 
 ENRICHMENT_META = {
     "type": "play_single",
@@ -633,7 +633,7 @@ Why this pattern is good:
 ### Pattern: broad batch update
 
 ```python
-from soc_enrich import EnrichmentContext
+from enrich_sdk import EnrichmentContext
 
 ENRICHMENT_META = {
     "type": "play_batch",
@@ -658,7 +658,7 @@ Why this pattern is good:
 ### Pattern: conditional scan
 
 ```python
-from soc_enrich import EnrichmentContext
+from enrich_sdk import EnrichmentContext
 
 ENRICHMENT_META = {
     "type": "play_batch",
@@ -685,7 +685,7 @@ Tradeoff:
 ### Pattern: cleanup fields
 
 ```python
-from soc_enrich import EnrichmentContext
+from enrich_sdk import EnrichmentContext
 
 ENRICHMENT_META = {
     "type": "play_batch",

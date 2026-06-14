@@ -5,7 +5,7 @@ from typing import Any
 import dash
 from dash import Input, Output, State, callback, ctx, dcc, html
 
-from ui.helpers import api_get, error_banner, metric_card, sev_badge, topbar
+from ui.helpers import api_get, error_banner, lcol, lpanel, lrow, ltable, metric_card, sev_badge, topbar
 
 dash.register_page(__name__, path="/")
 
@@ -64,7 +64,7 @@ def _recent_alert_row(a: dict) -> html.Tr:
 
 def _build(summary: dict, stats: dict, alerts: dict, svc_data: dict, rules_data: dict, timeline: dict) -> html.Div:
     if err := summary.get("error"):
-        return html.Div(className="content", children=[error_banner(f"Could not reach API: {err}")])
+        return html.Div(className="content", style={}, children=[error_banner(f"Could not reach API: {err}")])
 
     # metrics
     total_svc = summary.get("service_count", 0)
@@ -76,7 +76,7 @@ def _build(summary: dict, stats: dict, alerts: dict, svc_data: dict, rules_data:
     svc_color = "green" if running_svc == total_svc and total_svc > 0 else "amber" if running_svc > 0 else "red"
     alert_color = "red" if crit > 0 else "amber" if active_alerts > 0 else "green"
 
-    metrics = html.Div(className="metrics cols5", children=[
+    metrics = html.Div(className="metrics cols5", style={"flexShrink": "0"}, children=[
         metric_card("Active alerts", str(active_alerts), f"{crit} critical", alert_color),
         metric_card("Flow events", "—", "network flows", "blue"),
         metric_card("Suricata docs", f"{total_docs:,}", "total indexed", "blue"),
@@ -86,7 +86,7 @@ def _build(summary: dict, stats: dict, alerts: dict, svc_data: dict, rules_data:
 
     # timeline + services
     timeline_buckets = timeline.get("buckets", [])
-    timeline_card = html.Div(className="card", children=[
+    timeline_card = html.Div(className="card", style=lpanel(min_h=180, shrink=True), children=[
         html.Div(className="card-header", style={"marginBottom": "8px"}, children=[
             html.Span("Alert timeline", className="card-title"),
             html.Span("last 60 min · 5-min buckets", style={"fontSize": "11px", "color": "#888780"}),
@@ -101,37 +101,37 @@ def _build(summary: dict, stats: dict, alerts: dict, svc_data: dict, rules_data:
     ])
 
     cards = [c for c in svc_data.get("cards", []) if c.get("service") != "logstash"]
-    svc_table = html.Div(className="card", children=[
+    svc_table = html.Div(className="card", style=ltable(min_h=220), children=[
         html.Div(className="card-header", children=[
             html.Span("Services", className="card-title"),
             html.A("View all →", href="/stack", className="card-action"),
         ]),
-        html.Table(html.Tbody([_service_row(c) for c in cards]), className="tbl"),
+        html.Div(html.Table(html.Tbody([_service_row(c) for c in cards]), className="tbl"), className="table-panel-body"),
     ])
 
     # recent alerts (3 only)
     recent = alerts.get("alerts", [])[:3]
-    recent_alerts_card = html.Div(className="card", children=[
+    recent_alerts_card = html.Div(className="card", style={**ltable(min_h=160), "flexShrink": "0"}, children=[
         html.Div(className="card-header", children=[
             html.Span("Recent alerts", className="card-title"),
             html.A("View all →", href="/alerts", className="card-action"),
         ]),
-        html.Table([
+        html.Div(html.Table([
             html.Thead(html.Tr([html.Th("Time"), html.Th("Sev"), html.Th("Signature"), html.Th("Src → Dst"), html.Th("Dataset")])),
             html.Tbody([_recent_alert_row(a) for a in recent] if recent else
                        [html.Tr(html.Td("No recent alerts", colSpan=5, style={"color": "#888780", "fontSize": "12px", "padding": "12px 0"}))]),
-        ], className="tbl"),
+        ], className="tbl"), className="table-panel-body"),
     ])
 
     # indices & aliases
     aliases = summary.get("aliases", [])
     alias_names = list({r.get("alias") for r in aliases})[:3]
-    indices_card = html.Div(className="card", style={"flex": "1"}, children=[
+    indices_card = html.Div(className="card", style=ltable(fill=True, min_h=200), children=[
         html.Div(className="card-header", children=[
             html.Span("Indices & aliases", className="card-title"),
             html.A("Aliases →", href="/aliases", className="card-action"),
         ]),
-        html.Table(html.Tbody([
+        html.Div(html.Table(html.Tbody([
             *[html.Tr([
                 html.Td(idx.get("index", "—"), className="mono", style={"fontSize": "12px"}),
                 html.Td(f'{int(idx.get("docs.count") or 0):,} docs', style={"textAlign": "right", "fontSize": "12px", "fontWeight": "500"}),
@@ -142,18 +142,18 @@ def _build(summary: dict, stats: dict, alerts: dict, svc_data: dict, rules_data:
                 html.Td("alias", style={"textAlign": "right", "fontSize": "12px", "color": "#888780"}),
                 html.Td(html.Span("Alias", className="tag blue")),
             ]) for alias in alias_names],
-        ]), className="tbl"),
+        ]), className="tbl"), className="table-panel-body"),
     ])
 
     # rules status
     suri = rules_data.get("suricata", {}) if rules_data.get("exists") else {}
     sigma = rules_data.get("sigma", {}) if rules_data.get("exists") else {}
-    rules_card = html.Div(className="card", style={"flex": "1"}, children=[
+    rules_card = html.Div(className="card", style=lpanel(fill=True, min_h=200), children=[
         html.Div(className="card-header", children=[
             html.Span("Rules status", className="card-title"),
             html.A("Manage →", href="/rules", className="card-action"),
         ]),
-        html.Div(style={"display": "flex", "flexDirection": "column", "gap": "8px"}, children=[
+        html.Div(style={"display": "flex", "flexDirection": "column", "gap": "8px", "flex": "1", "justifyContent": "center"}, children=[
             html.Div(style={"display": "flex", "justifyContent": "space-between", "alignItems": "center", "fontSize": "13px"}, children=[
                 html.Span("Suricata", style={"color": "#888780"}),
                 html.Span("OK" if suri.get("status") == "ok" else "—", className=f"tag {'running' if suri.get('status') == 'ok' else 'warning'}"),
@@ -165,13 +165,11 @@ def _build(summary: dict, stats: dict, alerts: dict, svc_data: dict, rules_data:
         ]),
     ])
 
-    return html.Div(className="content", children=[
-        html.Div(style={"maxWidth": "1100px", "width": "100%", "display": "flex", "flexDirection": "column", "gap": "16px"}, children=[
-            metrics,
-            html.Div(className="row23", style={"flexShrink": "0"}, children=[timeline_card, svc_table]),
-            recent_alerts_card,
-            html.Div(style={"display": "flex", "gap": "16px"}, children=[indices_card, rules_card]),
-        ]),
+    return html.Div(className="content", style={}, children=[
+        metrics,
+        html.Div(style={**lrow(shrink=True), "gridTemplateColumns": "2fr 3fr"}, children=[timeline_card, svc_table]),
+        recent_alerts_card,
+        html.Div(style={**lrow(fill=False), "marginBottom": "20px"}, children=[indices_card, rules_card]),
     ])
 
 

@@ -6,6 +6,10 @@
   <title>Network Flows — SOC Lab</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.11.0/dist/tabler-icons.min.css">
+  <style>
+    .proto-bar-bg { flex:1; height:6px; background:rgba(0,0,0,0.07); border-radius:3px; overflow:hidden; }
+    .proto-bar-fill { height:100%; border-radius:3px; }
+  </style>
 </head>
 <body>
 <div class="app">
@@ -19,8 +23,7 @@
 
     <div class="content">
 
-      <!-- 4 metrics: Total flows, Unique sources, Unique destinations, Top protocol -->
-      <div class="metrics" id="net-metrics">
+      <div class="metrics">
         <div class="metric">
           <div class="metric-label">Total flows</div>
           <div class="metric-val blue">8,241</div>
@@ -37,20 +40,107 @@
           <div class="metric-sub">distinct dest IPs</div>
         </div>
         <div class="metric">
-          <div class="metric-label">Top protocol</div>
-          <div class="metric-val blue">TCP</div>
-          <div class="metric-sub">most common</div>
+          <div class="metric-label">Total bytes</div>
+          <div class="metric-val blue">3.7 GB</div>
+          <div class="metric-sub">bidirectional</div>
         </div>
       </div>
 
-      <!-- Flow table card (single card, no graph) -->
-      <div class="card">
+      <!-- Protocol breakdown + top talkers -->
+      <div style="display:flex;gap:14px">
+
+        <div class="card" style="flex:1">
+          <div class="card-header" style="margin-bottom:12px">
+            <span class="card-title">Protocol split</span>
+            <span style="font-size:11px;color:#888780">by flow count</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+              <span style="width:36px;font-weight:500">TCP</span>
+              <div class="proto-bar-bg"><div class="proto-bar-fill" style="width:71%;background:#185FA5"></div></div>
+              <span style="width:36px;text-align:right;color:#888780">5,851</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+              <span style="width:36px;font-weight:500">UDP</span>
+              <div class="proto-bar-bg"><div class="proto-bar-fill" style="width:21%;background:#639922"></div></div>
+              <span style="width:36px;text-align:right;color:#888780">1,731</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+              <span style="width:36px;font-weight:500">ICMP</span>
+              <div class="proto-bar-bg"><div class="proto-bar-fill" style="width:5%;background:#BA7517"></div></div>
+              <span style="width:36px;text-align:right;color:#888780">412</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+              <span style="width:36px;font-weight:500">Other</span>
+              <div class="proto-bar-bg"><div class="proto-bar-fill" style="width:3%;background:#b0afac"></div></div>
+              <span style="width:36px;text-align:right;color:#888780">247</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="flex:1">
+          <div class="card-header" style="margin-bottom:10px">
+            <span class="card-title">Top talkers</span>
+            <span style="font-size:11px;color:#888780">by bytes sent</span>
+          </div>
+          <table class="tbl">
+            <thead><tr><th>Source IP</th><th style="text-align:right">Flows</th><th style="text-align:right">Bytes</th></tr></thead>
+            <tbody>
+              <tr>
+                <td class="mono">10.0.0.5</td>
+                <td style="text-align:right;font-size:12px">1,204</td>
+                <td style="text-align:right;font-size:12px;font-weight:500">1.2 GB</td>
+              </tr>
+              <tr>
+                <td class="mono">192.168.1.100</td>
+                <td style="text-align:right;font-size:12px">842</td>
+                <td style="text-align:right;font-size:12px;font-weight:500">640 MB</td>
+              </tr>
+              <tr>
+                <td class="mono">10.0.0.12</td>
+                <td style="text-align:right;font-size:12px">509</td>
+                <td style="text-align:right;font-size:12px;font-weight:500">280 MB</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card" style="flex:1">
+          <div class="card-header" style="margin-bottom:10px">
+            <span class="card-title">Top destinations</span>
+            <span style="font-size:11px;color:#888780">external IPs</span>
+          </div>
+          <table class="tbl">
+            <thead><tr><th>Destination</th><th style="text-align:right">Flows</th><th>Port</th></tr></thead>
+            <tbody>
+              <tr>
+                <td class="mono">185.220.101.3</td>
+                <td style="text-align:right;font-size:12px"><b style="color:#A32D2D">402</b></td>
+                <td style="font-size:11px;color:#888780">443</td>
+              </tr>
+              <tr>
+                <td class="mono">8.8.8.8</td>
+                <td style="text-align:right;font-size:12px">318</td>
+                <td style="font-size:11px;color:#888780">53</td>
+              </tr>
+              <tr>
+                <td class="mono">1.1.1.1</td>
+                <td style="text-align:right;font-size:12px">211</td>
+                <td style="font-size:11px;color:#888780">443</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+      <!-- Flow table -->
+      <div class="card table-panel-card" style="flex:1">
         <div class="card-header">
           <span class="card-title">Flow table</span>
           <div style="display:flex;gap:8px">
             <input class="search-input" placeholder="Search IPs…" style="width:200px;padding-left:10px">
-            <!-- dcc.Dropdown with className="select" -->
-            <select class="select" style="width:160px;font-size:12px">
+            <select class="select" style="width:140px;font-size:12px">
               <option value="">All protocols</option>
               <option>TCP</option>
               <option>UDP</option>
@@ -59,63 +149,105 @@
           </div>
         </div>
 
-        <div id="net-table">
+        <div class="table-panel-body">
           <table class="tbl">
             <thead>
               <tr>
                 <th>Timestamp</th>
                 <th>Source</th>
-                <th></th><!-- arrow column -->
+                <th></th>
                 <th>Destination</th>
                 <th>Proto</th>
+                <th style="text-align:right">Pkts →</th>
+                <th style="text-align:right">Pkts ←</th>
                 <th style="text-align:right">Bytes</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td class="mono" style="white-space:nowrap;font-size:11px">2026-06-06 22:14:01</td>
+                <td class="mono" style="white-space:nowrap;font-size:11px">2026-06-13 11:26:37</td>
                 <td class="mono">10.0.0.5:54321</td>
                 <td style="color:#888780;padding:0 4px">→</td>
                 <td class="mono">185.220.101.3:443</td>
                 <td style="font-size:11px">TCP</td>
-                <td style="text-align:right;font-size:11px;color:#888780">2 MB</td>
+                <td style="text-align:right;font-size:11px;color:#888780">1,820</td>
+                <td style="text-align:right;font-size:11px;color:#888780">412</td>
+                <td style="text-align:right;font-size:11px;color:#888780">2.0 MB</td>
               </tr>
               <tr>
-                <td class="mono" style="white-space:nowrap;font-size:11px">2026-06-06 22:14:00</td>
+                <td class="mono" style="white-space:nowrap;font-size:11px">2026-06-13 11:26:35</td>
                 <td class="mono">10.0.0.7:62041</td>
                 <td style="color:#888780;padding:0 4px">→</td>
                 <td class="mono">8.8.8.8:53</td>
                 <td style="font-size:11px">UDP</td>
-                <td style="text-align:right;font-size:11px;color:#888780">128 B</td>
+                <td style="text-align:right;font-size:11px;color:#888780">2</td>
+                <td style="text-align:right;font-size:11px;color:#888780">2</td>
+                <td style="text-align:right;font-size:11px;color:#888780">256 B</td>
               </tr>
               <tr>
-                <td class="mono" style="white-space:nowrap;font-size:11px">2026-06-06 22:13:58</td>
+                <td class="mono" style="white-space:nowrap;font-size:11px">2026-06-13 11:26:30</td>
                 <td class="mono">192.168.1.100:41022</td>
                 <td style="color:#888780;padding:0 4px">→</td>
                 <td class="mono">10.0.0.1:22</td>
                 <td style="font-size:11px">TCP</td>
+                <td style="text-align:right;font-size:11px;color:#888780">94</td>
+                <td style="text-align:right;font-size:11px;color:#888780">89</td>
                 <td style="text-align:right;font-size:11px;color:#888780">12 KB</td>
               </tr>
               <tr>
-                <td class="mono" style="white-space:nowrap;font-size:11px">2026-06-06 22:13:45</td>
+                <td class="mono" style="white-space:nowrap;font-size:11px">2026-06-13 11:26:18</td>
                 <td class="mono">10.0.0.12:55214</td>
                 <td style="color:#888780;padding:0 4px">→</td>
                 <td class="mono">1.1.1.1:443</td>
                 <td style="font-size:11px">TCP</td>
+                <td style="text-align:right;font-size:11px;color:#888780">611</td>
+                <td style="text-align:right;font-size:11px;color:#888780">530</td>
                 <td style="text-align:right;font-size:11px;color:#888780">340 KB</td>
               </tr>
               <tr>
-                <td class="mono" style="white-space:nowrap;font-size:11px">2026-06-06 22:13:30</td>
+                <td class="mono" style="white-space:nowrap;font-size:11px">2026-06-13 11:26:05</td>
                 <td class="mono">10.0.0.5:54322</td>
                 <td style="color:#888780;padding:0 4px">→</td>
                 <td class="mono">185.220.101.3:443</td>
                 <td style="font-size:11px">TCP</td>
+                <td style="text-align:right;font-size:11px;color:#888780">1,204</td>
+                <td style="text-align:right;font-size:11px;color:#888780">380</td>
                 <td style="text-align:right;font-size:11px;color:#888780">1.2 MB</td>
+              </tr>
+              <tr>
+                <td class="mono" style="white-space:nowrap;font-size:11px">2026-06-13 11:25:54</td>
+                <td class="mono">10.0.0.20:49201</td>
+                <td style="color:#888780;padding:0 4px">→</td>
+                <td class="mono">203.0.113.42:80</td>
+                <td style="font-size:11px">TCP</td>
+                <td style="text-align:right;font-size:11px;color:#888780">44</td>
+                <td style="text-align:right;font-size:11px;color:#888780">38</td>
+                <td style="text-align:right;font-size:11px;color:#888780">18 KB</td>
+              </tr>
+              <tr>
+                <td class="mono" style="white-space:nowrap;font-size:11px">2026-06-13 11:25:41</td>
+                <td class="mono">10.0.0.7:33901</td>
+                <td style="color:#888780;padding:0 4px">→</td>
+                <td class="mono">1.1.1.1:53</td>
+                <td style="font-size:11px">UDP</td>
+                <td style="text-align:right;font-size:11px;color:#888780">1</td>
+                <td style="text-align:right;font-size:11px;color:#888780">1</td>
+                <td style="text-align:right;font-size:11px;color:#888780">128 B</td>
+              </tr>
+              <tr>
+                <td class="mono" style="white-space:nowrap;font-size:11px">2026-06-13 11:25:30</td>
+                <td class="mono">10.0.0.5:54401</td>
+                <td style="color:#888780;padding:0 4px">→</td>
+                <td class="mono">172.217.14.36:443</td>
+                <td style="font-size:11px">TCP</td>
+                <td style="text-align:right;font-size:11px;color:#888780">320</td>
+                <td style="text-align:right;font-size:11px;color:#888780">290</td>
+                <td style="text-align:right;font-size:11px;color:#888780">94 KB</td>
               </tr>
             </tbody>
           </table>
         </div>
-        <div id="net-footer" style="font-size:11px;color:#888780;padding-top:8px">
+        <div style="font-size:11px;color:#888780;padding-top:8px;flex-shrink:0">
           Showing 100 of 8,241 flows
         </div>
       </div>

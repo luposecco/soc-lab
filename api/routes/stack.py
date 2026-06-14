@@ -4,7 +4,7 @@ from fastapi import APIRouter
 
 from core.stack.docker import list_services
 from core.stack.health import stack_health_summary, stack_service_cards
-from core.stack.runtime import compose_down, compose_restart_service, compose_stop_service, compose_up, compose_up_service, service_logs
+from core.stack.runtime import compose_down, compose_restart_service, compose_stop_service, compose_up, compose_up_service, docker_stats_cache_meta, service_logs
 from api.utils import bad
 
 router = APIRouter(prefix="/api/stack")
@@ -14,7 +14,12 @@ router = APIRouter(prefix="/api/stack")
 def stack_services() -> dict:
     try:
         services = list_services()
-        return {"services": services, "summary": stack_health_summary(services), "cards": stack_service_cards(services)}
+        return {
+            "services": services,
+            "summary": stack_health_summary(services),
+            "cards": stack_service_cards(services),
+            "stats_cache": docker_stats_cache_meta(),
+        }
     except Exception as exc:
         raise bad(exc)
 

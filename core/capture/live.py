@@ -96,7 +96,14 @@ def _update_session_stats(docs: dict[str, int]) -> None:
         sessions: list = json.loads(sessions_file.read_text()) if sessions_file.exists() else []
         for s in sessions:
             if s.get("status") == "running":
+                prev_docs = s.get("suricata_docs", 0) or 0
                 s.update(docs)
+                s["segments_replayed"] = s.get("segments_replayed", 0) + 1
+                # Track per-segment doc delta for sparkline (last 20 segments)
+                delta = max(0, (docs.get("suricata_docs", 0) or 0) - prev_docs)
+                history = s.get("segment_docs_history", [])
+                history.append(delta)
+                s["segment_docs_history"] = history[-20:]
                 break
         sessions_file.write_text(json.dumps(sessions, indent=2))
     except Exception:

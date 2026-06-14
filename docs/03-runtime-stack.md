@@ -350,23 +350,23 @@ This means ElastAlert2 service startup is also a rules-preparation step.
 ```text
 ./start.sh
    |
-   +-> ensure .venv and pip deps
+   ├─ ensure .venv and pip deps
    |
-   +-> docker compose up -d
-   |      |
-   |      +-> elasticsearch container
-   |      +-> kibana container
-   |      +-> suricata container
-   |      +-> filebeat container
-   |      +-> elastalert2 container
+   ├─ docker compose up -d
+   │  |
+   │  ├─ elasticsearch container
+   │  ├─ kibana container
+   │  ├─ suricata container
+   │  ├─ filebeat container
+   │  └─ elastalert2 container
    |
-   +-> wait for Elasticsearch HTTP health
-   +-> wait for Kibana HTTP health
-   +-> load Security Onion templates and pipelines
-   +-> ensure system aliases and views
-   +-> start FastAPI on host
-   +-> start Dash on host
-   +-> start rules watcher on host
+   ├─ wait for Elasticsearch HTTP health
+   ├─ wait for Kibana HTTP health
+   ├─ load Security Onion templates and pipelines
+   ├─ ensure system aliases and views
+   ├─ start FastAPI on host
+   ├─ start Dash on host
+   └─ start rules watcher on host
 ```
 
 Another way to see the same flow is by runtime layer:

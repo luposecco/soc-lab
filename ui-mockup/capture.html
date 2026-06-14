@@ -12,7 +12,6 @@
   <div class="sidebar" id="sidebar"></div>
 
   <div class="main">
-    <!-- Topbar: title + Refresh -->
     <div class="topbar">
       <span class="page-title">Packet replay</span>
       <button class="topbar-btn"><i class="ti ti-refresh" style="font-size:13px"></i> Refresh</button>
@@ -29,36 +28,34 @@
           <div class="card" style="flex:1">
             <div class="card-header"><span class="card-title">PCAP file</span></div>
 
-            <!-- Upload zone -->
             <div class="upload-zone">
               <div class="upload-icon"><i class="ti ti-file-upload" style="font-size:24px;color:#888780"></i></div>
               <div class="upload-title">Drop a .pcap / .pcapng file or click to browse</div>
               <div class="upload-sub">Max 2 GB — replayed through Suricata IDS</div>
             </div>
 
-            <!-- File placeholder (dashed box, shown before file selected) -->
-            <div style="margin-top:10px;display:flex;align-items:center;gap:8px;padding:8px 10px;background:#F9F9F8;border-radius:6px;border:1px dashed #DDDCDA">
-              <i class="ti ti-file-off" style="font-size:15px;color:#c0bfbb;flex-shrink:0"></i>
+            <!-- File selected state -->
+            <div style="margin-top:10px;display:flex;align-items:center;gap:8px;padding:8px 10px;background:#EAF3DE;border-radius:6px;border:1px solid rgba(59,109,17,0.2)">
+              <i class="ti ti-file" style="font-size:15px;color:#3B6D11;flex-shrink:0"></i>
               <div style="flex:1">
-                <div style="font-size:12px;font-weight:500;color:#888780">No file selected</div>
-                <div style="font-size:11px;color:#b0afac">Drop a file above or select from folder below</div>
+                <div style="font-size:12px;font-weight:500;color:#1a1a18">evil-traffic.pcap</div>
+                <div style="font-size:11px;color:#888780">4.2 MB · from data/pcap/</div>
               </div>
+              <button class="rule-btn">Clear</button>
             </div>
 
             <div style="border-top:0.5px solid rgba(0,0,0,0.07);margin:14px 0"></div>
 
-            <!-- From data/pcap/ section -->
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
               <span style="font-size:11px;font-weight:600;color:#888780;text-transform:uppercase;letter-spacing:0.05em">From data/pcap/</span>
               <button class="rule-btn"><i class="ti ti-refresh" style="font-size:11px"></i> Refresh</button>
             </div>
 
-            <!-- folder file rows (up to 3 shown) -->
             <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid rgba(0,0,0,0.06)">
-              <i class="ti ti-file" style="font-size:13px;color:#888780;flex-shrink:0"></i>
-              <span class="mono" style="font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">evil-traffic.pcap</span>
+              <i class="ti ti-file" style="font-size:13px;color:#3B6D11;flex-shrink:0"></i>
+              <span class="mono" style="font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#3B6D11;font-weight:500">evil-traffic.pcap</span>
               <span style="font-size:11px;color:#888780;flex-shrink:0">4.2 MB</span>
-              <button class="rule-btn">Select</button>
+              <button class="rule-btn" style="background:#EAF3DE;border-color:rgba(59,109,17,0.3);color:#3B6D11">Selected</button>
             </div>
             <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid rgba(0,0,0,0.06)">
               <i class="ti ti-file" style="font-size:13px;color:#888780;flex-shrink:0"></i>
@@ -66,9 +63,15 @@
               <span style="font-size:11px;color:#888780;flex-shrink:0">1.8 MB</span>
               <button class="rule-btn">Select</button>
             </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid rgba(0,0,0,0.06)">
+              <i class="ti ti-file" style="font-size:13px;color:#888780;flex-shrink:0"></i>
+              <span class="mono" style="font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">dns-tunneling-sim.pcap</span>
+              <span style="font-size:11px;color:#888780;flex-shrink:0">820 KB</span>
+              <button class="rule-btn">Select</button>
+            </div>
             <button class="rule-btn" style="margin-top:8px;width:100%;justify-content:center;display:inline-flex;align-items:center;line-height:1">
-              <i class="ti ti-folder-open" style="font-size:13px;vertical-align:middle;margin-right:5px"></i>
-              <span style="vertical-align:middle">Show all files</span>
+              <i class="ti ti-folder-open" style="font-size:13px;margin-right:5px"></i>
+              Show all files
             </button>
           </div>
         </div>
@@ -79,17 +82,15 @@
           <div class="card" style="flex-shrink:0">
             <div class="card-header"><span class="card-title">Replay options</span></div>
             <div style="display:flex;flex-direction:column;gap:14px">
-              <!-- Keep mode checkbox -->
               <label style="display:flex;align-items:center;gap:12px;cursor:pointer">
-                <input type="checkbox"> <!-- dcc.Checklist -->
+                <input type="checkbox">
                 <div>
                   <div style="font-size:13px;font-weight:500">Keep mode</div>
                   <div style="font-size:11px;color:#888780">Preserve existing indexed data and alerts</div>
                 </div>
               </label>
-              <!-- Shift timestamps checkbox -->
               <label style="display:flex;align-items:center;gap:12px;cursor:pointer">
-                <input type="checkbox">
+                <input type="checkbox" checked>
                 <div>
                   <div style="font-size:13px;font-weight:500">Shift timestamps to now</div>
                   <div style="font-size:11px;color:#888780">Rebase event timestamps to current time</div>
@@ -103,19 +104,63 @@
             </div>
           </div>
 
-          <!-- Recent replays history -->
-          <div class="card">
+          <!-- Recent replays — populated -->
+          <div class="card table-panel-card" style="flex:1">
             <div class="card-header">
               <span class="card-title">Recent replays</span>
-              <span style="font-size:11px;color:#888780">0 replays</span>
+              <span style="font-size:11px;color:#888780">3 replays</span>
             </div>
-            <div style="font-size:12px;color:#888780;padding:4px 0">No replays yet.</div>
+            <div class="table-panel-body">
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th>File</th>
+                    <th style="text-align:right">Docs</th>
+                    <th style="text-align:right">Alerts</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <div class="mono" style="font-size:12px;font-weight:500">evil-traffic.pcap</div>
+                      <div style="font-size:11px;color:#888780">4.2 MB · keep off · shift on</div>
+                    </td>
+                    <td style="font-size:12px;text-align:right;font-weight:500">12,304</td>
+                    <td style="font-size:12px;text-align:right"><b style="color:#A32D2D">9</b></td>
+                    <td style="font-size:11px;color:#888780;white-space:nowrap">Jun 13 11:04</td>
+                    <td><span class="tag unknown">Done</span></td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div class="mono" style="font-size:12px;font-weight:500">lateral-movement.pcap</div>
+                      <div style="font-size:11px;color:#888780">1.8 MB · keep off · shift on</div>
+                    </td>
+                    <td style="font-size:12px;text-align:right;font-weight:500">5,841</td>
+                    <td style="font-size:12px;text-align:right"><b style="color:#A32D2D">4</b></td>
+                    <td style="font-size:11px;color:#888780;white-space:nowrap">Jun 13 10:41</td>
+                    <td><span class="tag unknown">Done</span></td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div class="mono" style="font-size:12px;font-weight:500">dns-tunneling-sim.pcap</div>
+                      <div style="font-size:11px;color:#888780">820 KB · keep on · shift off</div>
+                    </td>
+                    <td style="font-size:12px;text-align:right;font-weight:500">2,109</td>
+                    <td style="font-size:12px;text-align:right"><span style="color:#b0afac">—</span></td>
+                    <td style="font-size:11px;color:#888780;white-space:nowrap">Jun 12 17:20</td>
+                    <td><span class="tag unknown">Done</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
 
         </div>
       </div>
 
-      <!-- Bottom row: Replay output (flex:1) + Loaded file (300px) -->
+      <!-- Bottom row: Replay output + Loaded file -->
       <div style="display:flex;gap:14px;flex:1;min-height:0">
 
         <!-- Replay output -->
@@ -125,33 +170,50 @@
             <button class="rule-btn">Clear</button>
           </div>
           <div class="terminal fill">
-            <span style="color:#6e7681;font-style:italic">Run a replay to see output…</span>
+<span style="color:#6e7681">[11:04:01]</span> <span style="color:#6B9DD8">→</span> replaying evil-traffic.pcap via tcpreplay…
+<span style="color:#6e7681">[11:04:02]</span>   suricata watching /tmp/soc-replay.pcap
+<span style="color:#6e7681">[11:04:07]</span> <span style="color:#639922">✓</span> replay complete — 12,304 packets sent
+<span style="color:#6e7681">[11:04:08]</span> <span style="color:#6B9DD8">→</span> waiting for Filebeat to ship logs…
+<span style="color:#6e7681">[11:04:14]</span> <span style="color:#639922">✓</span> 12,304 docs indexed in suricata-2026.06.13
+<span style="color:#6e7681">[11:04:14]</span> <span style="color:#BA7517">⚑</span> 9 alerts triggered — see Alerts page for details
+<span style="color:#6e7681">[11:04:14]</span> <span style="color:#639922">✓</span> done.
           </div>
-          <div id="pcap-output-stats" style="flex-shrink:0"></div>
+          <div style="flex-shrink:0;padding-top:8px;display:flex;gap:16px;font-size:12px;color:#888780">
+            <span><i class="ti ti-file" style="vertical-align:-2px;margin-right:4px"></i>evil-traffic.pcap</span>
+            <span><i class="ti ti-database" style="vertical-align:-2px;margin-right:4px"></i>12,304 docs</span>
+            <span><i class="ti ti-bell" style="vertical-align:-2px;margin-right:4px;color:#A32D2D"></i><b style="color:#A32D2D">9 alerts</b></span>
+          </div>
         </div>
 
-        <!-- Loaded file (width:300px) -->
-        <div class="card" style="width:300px;flex-shrink:0">
+        <!-- Loaded file -->
+        <div class="card" style="width:280px;flex-shrink:0">
           <div class="card-header"><span class="card-title">Loaded file</span></div>
-          <!-- Placeholder state (no file loaded) -->
-          <div style="text-align:center;padding:28px 0;color:#b0afac">
-            <i class="ti ti-file-off" style="font-size:28px;display:block;margin-bottom:6px"></i>
-            <div style="font-size:12px">No file loaded</div>
+          <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:14px">
+            <i class="ti ti-file" style="font-size:20px;color:#3B6D11;margin-top:1px;flex-shrink:0"></i>
+            <div class="mono" style="font-size:12px;font-weight:500;word-break:break-all;line-height:1.4">evil-traffic.pcap</div>
           </div>
-          <!-- Loaded state (after a file is selected and replayed):
-          <div>
-            <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:12px">
-              <i class="ti ti-file" style="font-size:18px;color:#3B6D11;margin-top:1px;flex-shrink:0"></i>
-              <div class="mono" style="font-size:12px;font-weight:500;word-break:break-all;line-height:1.4">dns-cc.pcap</div>
-            </div>
-            <table class="tbl"><tbody>
-              <tr><td style="color:#888780;font-size:11px;padding-right:10px;white-space:nowrap;padding-bottom:5px;vertical-align:top">Source</td><td style="font-size:12px;padding-bottom:5px">data/pcap/</td></tr>
-              <tr><td style="color:#888780;font-size:11px;padding-right:10px;white-space:nowrap;padding-bottom:5px;vertical-align:top">Status</td><td style="padding-bottom:5px"><span class="tag running">Ready</span></td></tr>
-              <tr><td style="color:#888780;font-size:11px;padding-right:10px;white-space:nowrap;padding-bottom:5px;vertical-align:top">Packets</td><td style="font-size:12px;padding-bottom:5px">12,304</td></tr>
-              <tr><td style="color:#888780;font-size:11px;padding-right:10px;white-space:nowrap;padding-bottom:5px;vertical-align:top">Size</td><td style="font-size:12px;padding-bottom:5px">28 MB</td></tr>
-            </tbody></table>
-          </div>
-          -->
+          <table class="tbl"><tbody>
+            <tr>
+              <td style="color:#888780;font-size:11px;padding-right:10px;white-space:nowrap;vertical-align:top">Source</td>
+              <td style="font-size:12px">data/pcap/</td>
+            </tr>
+            <tr>
+              <td style="color:#888780;font-size:11px;padding-right:10px;white-space:nowrap;vertical-align:top">Status</td>
+              <td><span class="tag unknown">Ready</span></td>
+            </tr>
+            <tr>
+              <td style="color:#888780;font-size:11px;padding-right:10px;white-space:nowrap;vertical-align:top">Size</td>
+              <td style="font-size:12px">4.2 MB</td>
+            </tr>
+            <tr>
+              <td style="color:#888780;font-size:11px;padding-right:10px;white-space:nowrap;vertical-align:top">Packets</td>
+              <td style="font-size:12px">12,304</td>
+            </tr>
+            <tr>
+              <td style="color:#888780;font-size:11px;padding-right:10px;white-space:nowrap;vertical-align:top">Capture span</td>
+              <td style="font-size:12px">~14 min</td>
+            </tr>
+          </tbody></table>
         </div>
 
       </div>

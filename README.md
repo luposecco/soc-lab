@@ -13,6 +13,42 @@ SOC Lab is a local security operations lab built around:
 
 It is designed for realistic security-data workflows, not just static demos. You can replay PCAPs, capture live traffic, ingest raw logs, test detections, recreate enterprise alias names, and run enrichment logic against one or more Elasticsearch targets.
 
+## Host Dependencies
+
+`./start.sh` installs the Python package requirements from `requirements.txt` into a local `.venv`, but it expects the host tools below to already exist.
+
+| Dependency | Required | Used for | Notes |
+| --- | --- | --- | --- |
+| Docker | Yes | Running Elasticsearch, Kibana, Suricata, Filebeat, and ElastAlert2 | `start.sh`, `stop.sh`, and `reset.sh` all depend on a working Docker daemon. |
+| Docker Compose v2 | Yes | Bringing the stack up with `docker compose` | The repo uses the `docker compose` subcommand, not legacy `docker-compose`. |
+| Python 3 | Yes | FastAPI, Dash, repo automation, enrichment, ingest helpers | `start.sh` creates `.venv` with `python3 -m venv`. |
+| Python `venv` support | Yes | Creating the local virtual environment | On some Linux distros this is a separate package such as `python3-venv`. |
+| `curl` | Yes | Startup health checks for Elasticsearch and Kibana | Used directly in `start.sh` and throughout the ops docs. |
+| `lsof` | Yes | Killing stale host processes bound to UI/API ports | Used by `start.sh`, `stop.sh`, and `reset.sh`. |
+| `dumpcap` | Optional | Live capture mode | Required for the live capture workflow implemented in `core/capture/live.py` and exposed through the current UI/API flow. Installed with Wireshark or tshark packages. |
+| `capinfos` | Optional | Fast PCAP metadata inspection in the capture UI/API | Used for packet count and duration in `/api/capture/pcap/info`. Usually installed with Wireshark. |
+| Ollama | Optional | AI-generated ingest pipelines | Required only for LLM-assisted pipeline generation/upload flows. |
+| `jq` | Optional | Pretty-printing JSON during manual verification and debugging | Used in docs/examples, not required for the lab to run. |
+
+Python packages installed automatically into `.venv` by `start.sh`:
+
+- `python-evtx`
+- `pyyaml`
+- `elasticsearch`
+- `fastapi`
+- `uvicorn`
+- `dash`
+- `dash-ace`
+- `httpx`
+- `scapy`
+
+Feature notes:
+
+- Basic lab startup needs only the required dependencies in the table.
+- Live capture needs `dumpcap` permissions that allow your current user to run `dumpcap -D` successfully.
+- PCAP replay from existing files does not require `dumpcap`, but the richer PCAP info view uses `capinfos` when available.
+- AI pipeline generation is optional and only works when Ollama is running locally.
+
 ## Quick Run
 
 Start everything:
@@ -46,6 +82,12 @@ Destructive reset:
 ./reset.sh
 ```
 
+Current documentation set:
+
+- `docs/README.md` - reading order and documentation map
+- `docs/03-runtime-stack.md` - current startup and runtime behavior
+- `docs/09-operations.md` - verification and troubleshooting commands
+
 ## Enrichment SDK Quick Start
 
 User scripts live under:
@@ -57,13 +99,13 @@ data/enrichments/scripts/
 They import the public SDK surface like this:
 
 ```python
-from soc_enrich import EnrichmentContext
+from enrich_sdk import EnrichmentContext
 ```
 
 Minimal example:
 
 ```python
-from soc_enrich import EnrichmentContext
+from enrich_sdk import EnrichmentContext
 
 ENRICHMENT_META = {
     "type": "play_batch",
@@ -119,9 +161,9 @@ normalization / ingestion
        v
 Elasticsearch indices and aliases
        |
-       +-> Kibana search and dashboards
-       +-> ElastAlert2 detections
-       +-> enrichment scripts
+       ├─ Kibana search and dashboards
+       ├─ ElastAlert2 detections
+       └─ enrichment scripts
 ```
 
 The repo also gives you a web control plane on top of that runtime stack.
@@ -323,7 +365,7 @@ soc-lab/
 │   └── suricata-start.sh        # Suricata container entrypoint
 ├── docs/                        # main long-form documentation set
 ├── runtime/                     # runtime logs and generated status files
-├── soc_enrich/
+├── enrich_sdk/
 │   └── __init__.py              # public enrichment SDK import surface
 ├── ui/
 │   ├── app.py                   # Dash app entry point

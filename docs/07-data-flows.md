@@ -58,22 +58,22 @@ PCAP file
    v
 Suricata replay inside container
    |
-   +-> decode traffic
-   +-> evaluate rules
-   +-> write event JSON lines
+   ├─ decode traffic
+   ├─ evaluate rules
+   └─ write event JSON lines
    v
 runtime/logs/suricata/eve.json
    |
    v
 Filebeat tailer
    |
-   +-> bulk HTTP ingest to Elasticsearch
+   └─ bulk HTTP ingest to Elasticsearch
    v
 suricata-* indices
    |
-   +-> Kibana search
-   +-> alias views such as soc-alerts
-   +-> ElastAlert2 scheduled queries
+   ├─ Kibana search
+   ├─ alias views such as soc-alerts
+   └─ ElastAlert2 scheduled queries
    v
 elastalert2_alerts
 ```
@@ -229,15 +229,15 @@ Dash / API call
    v
 core.enrich.runner
    |
-   +-> read data/enrichments/config/enrichments.yml
-   +-> load cluster config
-   +-> import script file
-   +-> validate ENRICHMENT_META
-   +-> create EnrichmentContext
+   ├─ read data/enrichments/config/enrichments.yml
+   ├─ load cluster config
+   ├─ import script file
+   ├─ validate ENRICHMENT_META
+   └─ create EnrichmentContext
    v
 user script
    |
-   +-> ctx.search / ctx.scan / ctx.update_doc / ...
+   └─ ctx.search / ctx.scan / ctx.update_doc / ...
    v
 Elasticsearch target cluster
    |

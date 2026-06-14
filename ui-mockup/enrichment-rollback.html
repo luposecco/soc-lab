@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enrichment Rollback - SOC Lab</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.11.0/dist/tabler-icons.min.css">
+</head>
+<body>
+<div class="app">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main">
+    <div class="topbar">
+      <span class="page-title">Enrichment Rollback</span>
+      <div class="pages">
+        <a class="page-btn" href="enrichment.html">Overview</a>
+        <a class="page-btn" href="enrichment-manage.html">Management</a>
+        <a class="page-btn active" href="enrichment-rollback.html">Rollback</a>
+      </div>
+      <button class="topbar-btn"><i class="ti ti-refresh" style="font-size:13px"></i> Refresh</button>
+    </div>
+    <div class="content">
+      <div class="card" style="min-height:340px; display:flex; flex-direction:column;">
+        <div class="card-header"><span class="card-title">Recent runs</span><span class="card-action">rollback available per run</span></div>
+        <div id="enrich-runs-table">
+          <table class="tbl">
+            <thead><tr><th>Timestamp</th><th>Enrichment</th><th>Cluster</th><th style="text-align:right">Ops</th><th></th><th>Run ID</th></tr></thead>
+            <tbody>
+              <tr><td class="mono" style="font-size:11px;white-space:nowrap">2026-06-13 11:32:18</td><td>Example Risk</td><td>customer-prod</td><td style="text-align:right;font-size:11px">142</td><td><button class="svc-btn stop" style="padding:3px 8px;font-size:11px"><i class="ti ti-rotate-clockwise" style="font-size:11px"></i> Rollback</button></td><td class="mono" style="font-size:10px;color:#888780">run-20260613-risk-01</td></tr>
+              <tr><td class="mono" style="font-size:11px;white-space:nowrap">2026-06-13 10:55:04</td><td>Selected Alert Annotator</td><td>lab</td><td style="text-align:right;font-size:11px">1</td><td><button class="svc-btn stop" style="padding:3px 8px;font-size:11px"><i class="ti ti-rotate-clockwise" style="font-size:11px"></i> Rollback</button></td><td class="mono" style="font-size:10px;color:#888780">run-20260613-single-07</td></tr>
+              <tr><td class="mono" style="font-size:11px;white-space:nowrap">2026-06-13 10:30:00</td><td>External IoC Sync</td><td>customer-prod</td><td style="text-align:right;font-size:11px">803</td><td><button class="svc-btn stop" style="padding:3px 8px;font-size:11px"><i class="ti ti-rotate-clockwise" style="font-size:11px"></i> Rollback</button></td><td class="mono" style="font-size:10px;color:#888780">run-20260613-ioc-04</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="_nav.js"></script>
+<script>setActiveNav('enrichment');</script>
+</body>
+</html>
