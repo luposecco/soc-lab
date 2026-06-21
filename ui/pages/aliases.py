@@ -305,7 +305,7 @@ def layout() -> html.Div:
         html.Div(className="content", style={}, children=[
             html.Div(id="aliases-banner"),
             html.Div(id="aliases-metrics", className="metrics cols3", style={"flexShrink": "0"}),
-            html.Div(style={"display": "flex", "gap": "14px", "flex": "1"}, children=[
+            html.Div(style={"display": "flex", "gap": "14px", "marginBottom": "20px"}, children=[
                 html.Div(style={"display": "flex", "flexDirection": "column", "gap": "14px", "flex": "1", "minWidth": "300px"}, children=[
                     html.Div(className="card", style={**ltable(fill=True, min_h=360), "maxHeight": "440px"}, children=[
                         html.Div(className="card-header", children=[html.Span("Alias inventory", className="card-title"), html.Span("auto-refresh", className="card-action")]),

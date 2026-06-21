@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 import dash
 from dash import Input, Output, State, callback, ctx, dcc, html
@@ -93,6 +93,15 @@ def layout() -> html.Div:
     history = history_resp.get("history", []) if isinstance(history_resp, dict) else []
     pcap_files = pcap_files_resp.get("files", []) if isinstance(pcap_files_resp, dict) else []
     replay_terminal, replay_stats, replay_badge, replay_running, replay_state = _replay_state_view(replay_status_resp if isinstance(replay_status_resp, dict) else {})
+    initial_file_data = replay_status_resp.get("file_data") if isinstance(replay_status_resp, dict) else None
+    initial_file_info = replay_status_resp.get("file_info") if isinstance(replay_status_resp, dict) else None
+    initial_file_loaded = _file_placeholder()
+    initial_loaded_info = _loaded_file_placeholder()
+    if initial_file_data:
+        initial_filename = initial_file_data.get("filename", "—")
+        initial_source = "selected from data/pcap/" if initial_file_data.get("from_folder") else "uploaded"
+        initial_file_loaded = _file_loaded_badge(initial_filename, initial_source)
+        initial_loaded_info = _loaded_file_card_body(initial_filename, "data/pcap/" if initial_file_data.get("from_folder") else "uploaded", initial_file_info or {}, replay_state)
     return html.Div([
         topbar("Packet replay", dcc.Interval(id="pcap-poll", interval=15_000, n_intervals=0), html.Button([html.I(className="ti ti-refresh", style={"fontSize": "13px"}), " Refresh"], id="pcap-refresh-btn", className="topbar-btn", n_clicks=0)),
         html.Div(id="pcap-banner"),
@@ -101,11 +110,11 @@ def layout() -> html.Div:
                 html.Div(style=lcol(), children=[html.Div(className="card", style=lpanel(fill=True, min_h=394), children=[
                     html.Div(className="card-header", children=[html.Span("PCAP file", className="card-title")]),
                     dcc.Upload(id="pcap-upload-zone", children=html.Div([html.Div(html.I(className="ti ti-file-upload", style={"fontSize": "24px", "color": "#888780"}), className="upload-icon"), html.Div("Drop a .pcap / .pcapng file or click to browse", className="upload-title"), html.Div("Max 2 GB — replayed through Suricata IDS", className="upload-sub")], className="upload-zone"), multiple=False),
-                    html.Div(id="pcap-file-loaded", style={"marginTop": "10px"}, children=_file_placeholder()),
+                    html.Div(id="pcap-file-loaded", style={"marginTop": "10px"}, children=initial_file_loaded),
                     html.Div(style={"borderTop": "0.5px solid rgba(0,0,0,0.07)", "margin": "14px 0"}),
                     html.Div(style={"display": "flex", "alignItems": "center", "justifyContent": "space-between", "marginBottom": "8px"}, children=[html.Span("From data/pcap/", style={"fontSize": "11px", "fontWeight": "600", "color": "#888780", "textTransform": "uppercase", "letterSpacing": "0.05em"}), html.Button([html.I(className="ti ti-refresh", style={"fontSize": "11px"}), " Refresh"], id="pcap-folder-refresh-btn", className="rule-btn", n_clicks=0)]),
                     html.Div(id="pcap-folder-list", children=_pcap_folder_preview(pcap_files)),
-                    html.Button([html.I(className="ti ti-folder-open", style={"fontSize": "13px", "verticalAlign": "middle", "marginRight": "5px"}), html.Span("Show all files", style={"verticalAlign": "middle"})], id="pcap-show-all-btn", className="rule-btn", style={"marginTop": "8px", "width": "100%", "justifyContent": "center", "display": "none" if len(pcap_files) <= 3 else "inline-flex", "alignItems": "center", "lineHeight": "1"}, n_clicks=0),
+                    html.Button([html.I(className="ti ti-folder-open", style={"fontSize": "13px", "verticalAlign": "middle", "marginRight": "5px"}), html.Span("Show all files", style={"verticalAlign": "middle"})], id="pcap-show-all-btn", className="rule-btn", style={"marginTop": "8px", "width": "100%", "justifyContent": "center", "display": "none" if len(pcap_files) <= 5 else "inline-flex", "alignItems": "center", "lineHeight": "1"}, n_clicks=0),
                 ])]),
                 html.Div(style=lcol(), children=[
                     html.Div(className="card", style=lpanel(min_h=200, shrink=True), children=[
@@ -116,13 +125,13 @@ def layout() -> html.Div:
                             html.Button([html.I(className="ti ti-player-play", style={"fontSize": "14px"}), " Replay"], id="pcap-replay-btn", className="topbar-btn primary", style={"width": "100%", "justifyContent": "center", "padding": "10px", "marginTop": "4px"}, n_clicks=0),
                         ]),
                     ]),
-                    html.Div(className="card", style=ltable(fill=True, min_h=180), children=[
+                    html.Div(className="card", style={**ltable(min_h=320, shrink=True), "maxHeight": "clamp(180px, 24vh, 320px)"}, children=[
                         html.Div(className="card-header", style={"flexShrink": "0"}, children=[html.Span("Recent replays", className="card-title"), html.Span(id="pcap-history-count", children=f"{len(history)} replays", style={"fontSize": "11px", "color": "#888780"})]),
                         html.Div(id="pcap-history-table", children=_history_table(history), className="table-panel-body"),
                     ]),
                 ]),
             ]),
-            html.Div(style={"display": "flex", "gap": "14px", "flex": "1", "minHeight": "0", "marginBottom": "20px"}, children=[
+            html.Div(style={"display": "flex", "gap": "14px", "height": "clamp(300px, 38vh, 560px)", "minHeight": "300px", "marginBottom": "20px"}, children=[
                 html.Div(className="card", style={**lpanel(fill=True, min_h=300), "overflow": "hidden"}, children=[
                     html.Div(className="card-header", style={"flexShrink": "0"}, children=[html.Span(["Replay output", html.Span(id="pcap-live-badge", children=replay_badge)], className="card-title"), html.Button("Clear", id="pcap-clear-btn", className="rule-btn", n_clicks=0)]),
                     html.Div(id="pcap-output-terminal", className="terminal fill", style={"minHeight": "0"}, children=replay_terminal),
@@ -130,12 +139,12 @@ def layout() -> html.Div:
                 ]),
                 html.Div(className="card", style={**lpanel(min_h=300), "flexBasis": "350px", "flexShrink": "0"}, children=[
                     html.Div(className="card-header", children=[html.Span("Loaded file", className="card-title")]),
-                    html.Div(id="pcap-loaded-file-info", children=_loaded_file_placeholder()),
+                    html.Div(id="pcap-loaded-file-info", children=initial_loaded_info),
                 ]),
             ]),
         ]),
         _overlay("pcap-overlay", "PCAP files — data/pcap/", pcap_files, "pcap-folder-pick"),
-        dcc.Store(id="pcap-file-store", data=None), dcc.Store(id="pcap-file-info", data=None), dcc.Store(id="pcap-replay-running", data=replay_running), dcc.Store(id="pcap-replay-status", data=replay_state), dcc.Interval(id="pcap-replay-poll", interval=1500, n_intervals=0, disabled=not replay_running),
+        dcc.Store(id="pcap-file-store", data=initial_file_data), dcc.Store(id="pcap-file-info", data=initial_file_info), dcc.Store(id="pcap-replay-running", data=replay_running), dcc.Store(id="pcap-replay-status", data=replay_state), dcc.Interval(id="pcap-replay-poll", interval=1500, n_intervals=0, disabled=not replay_running),
     ])
 
 
@@ -150,7 +159,7 @@ def _store_pcap(contents, filename):
 def _load_pcap_info(file_data):
     if not file_data or not file_data.get("from_folder"):
         return None
-    resp = api_get(f"/api/capture/pcap/info?file={file_data.get('filename', '')}")
+    resp = api_get(f"/api/capture/pcap/info?file={quote(file_data.get('filename', ''), safe='')}")
     return resp if not resp.get("error") else None
 
 
@@ -173,7 +182,7 @@ def _pick_pcap_from_folder(n_clicks):
 def _refresh_pcap_folder(_refresh, _poll):
     resp = api_get("/api/capture/pcap/files")
     files = resp.get("files", []) if isinstance(resp, dict) else []
-    btn_style = {"marginTop": "8px", "width": "100%", "justifyContent": "center", "display": "none" if len(files) <= 3 else "flex"}
+    btn_style = {"marginTop": "8px", "width": "100%", "justifyContent": "center", "display": "none" if len(files) <= 5 else "flex"}
     btn_label = [html.I(className="ti ti-folder-open", style={"fontSize": "13px", "verticalAlign": "middle", "marginRight": "5px"}), html.Span(f"Show all {len(files)} files", style={"verticalAlign": "middle"})]
     return _pcap_folder_preview(files), files, btn_style, btn_label
 
@@ -204,25 +213,25 @@ def _history_quick_select(n_clicks):
     return {"filename": name, "from_folder": True}, _file_loaded_badge(name, "selected from history")
 
 
-@callback(Output("pcap-replay-running", "data"), Output("pcap-replay-poll", "disabled"), Output("pcap-output-terminal", "children"), Output("pcap-output-stats", "children"), Output("pcap-live-badge", "children"), Output("pcap-banner", "children"), Output("pcap-replay-status", "data"), Output("pcap-file-info", "data", allow_duplicate=True), Input("pcap-replay-btn", "n_clicks"), Input("pcap-clear-btn", "n_clicks"), State("pcap-file-store", "data"), State("pcap-opt-keep", "value"), State("pcap-opt-now", "value"), State("pcap-file-info", "data"), prevent_initial_call=True)
+@callback(Output("pcap-replay-running", "data"), Output("pcap-replay-poll", "disabled"), Output("pcap-output-terminal", "children"), Output("pcap-output-stats", "children"), Output("pcap-live-badge", "children"), Output("pcap-banner", "children"), Output("pcap-replay-status", "data"), Output("pcap-file-info", "data", allow_duplicate=True), Output("pcap-file-store", "data", allow_duplicate=True), Output("pcap-file-loaded", "children", allow_duplicate=True), Output("pcap-loaded-file-info", "children", allow_duplicate=True), Input("pcap-replay-btn", "n_clicks"), Input("pcap-clear-btn", "n_clicks"), State("pcap-file-store", "data"), State("pcap-opt-keep", "value"), State("pcap-opt-now", "value"), State("pcap-file-info", "data"), prevent_initial_call=True)
 def _start_replay(_replay, _clear, file_data, keep_val, now_val, existing_info):
     if ctx.triggered_id == "pcap-clear-btn":
         api_post("/api/capture/replay/clear")
-        return False, True, [html.Span("Run a replay to see output…", style={"color": "#6e7681", "fontStyle": "italic"})], [], [], [], "idle", dash.no_update
+        return False, True, [html.Span("Run a replay to see output…", style={"color": "#6e7681", "fontStyle": "italic"})], [], [], [], "idle", None, None, _file_placeholder(), _loaded_file_placeholder()
     if not file_data:
-        return False, True, dash.no_update, dash.no_update, dash.no_update, [error_banner("No PCAP file loaded — drop a file or select from folder")], "idle", dash.no_update
+        return False, True, dash.no_update, dash.no_update, dash.no_update, [error_banner("No PCAP file loaded — drop a file or select from folder")], "idle", dash.no_update, dash.no_update, dash.no_update, dash.no_update
     body: dict[str, Any] = {"keep": "keep" in (keep_val or []), "now": "now" in (now_val or []), "pcap": file_data["filename"]}
     if not file_data.get("from_folder"):
         body["content"] = file_data.get("content", "")
     result = api_post("/api/capture/replay", body)
     if result.get("error"):
-        return False, True, dash.no_update, dash.no_update, dash.no_update, [error_banner(f"Replay failed: {result['error']}")], "error", dash.no_update
+        return False, True, dash.no_update, dash.no_update, dash.no_update, [error_banner(f"Replay failed: {result['error']}")], "error", dash.no_update, dash.no_update, dash.no_update, dash.no_update
     new_info = existing_info
     if not existing_info:
-        resp = api_get(f"/api/capture/pcap/info?file={Path(file_data.get('filename', '')).name}")
+        resp = api_get(f"/api/capture/pcap/info?file={quote(file_data.get('filename', ''), safe='')}")
         if not resp.get("error"):
             new_info = resp
-    return True, False, [], [], [html.Span(" ● Live", style={"fontSize": "11px", "color": "#3B6D11", "fontWeight": "400"})], [], "running", new_info
+    return True, False, [], [], [html.Span(" ● Live", style={"fontSize": "11px", "color": "#3B6D11", "fontWeight": "400"})], [], "running", new_info, dash.no_update, dash.no_update, dash.no_update
 
 
 @callback(Output("pcap-output-terminal", "children", allow_duplicate=True), Output("pcap-output-stats", "children", allow_duplicate=True), Output("pcap-live-badge", "children", allow_duplicate=True), Output("pcap-history-table", "children", allow_duplicate=True), Output("pcap-replay-running", "data", allow_duplicate=True), Output("pcap-replay-poll", "disabled", allow_duplicate=True), Output("pcap-replay-status", "data", allow_duplicate=True), Input("pcap-replay-poll", "n_intervals"), State("pcap-replay-running", "data"), prevent_initial_call=True)

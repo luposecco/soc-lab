@@ -35,12 +35,25 @@ _REPLAY_JOB_ID = "current"  # single-slot: only one replay at a time
 
 
 def _empty_replay_state() -> dict:
-    return {"running": False, "done": True, "lines": [], "result": None, "error": None, "updated_at": None}
+    return {
+        "running": False,
+        "done": True,
+        "lines": [],
+        "result": None,
+        "error": None,
+        "file_data": None,
+        "file_info": None,
+        "updated_at": None,
+    }
 
 
 def _save_replay_state(state: dict) -> None:
     path = _REPLAY_STATE_FILE()
     path.parent.mkdir(parents=True, exist_ok=True)
+    previous = _load_replay_state() if path.exists() else {}
+    for key in ("file_data", "file_info"):
+        if key not in state and previous.get(key) is not None:
+            state[key] = previous[key]
     state = {**state, "updated_at": time.time()}
     path.write_text(json.dumps(state, indent=2))
 
@@ -64,6 +77,8 @@ def _load_replay_state() -> dict:
         "lines": state.get("lines", []),
         "result": state.get("result"),
         "error": state.get("error"),
+        "file_data": state.get("file_data"),
+        "file_info": state.get("file_info"),
         "updated_at": updated_at,
     }
 
@@ -131,16 +146,11 @@ def pcap_files() -> dict:
             stat = f.stat()
             files.append({"name": str(f.relative_to(pcap_dir)), "size": stat.st_size,
                           "size_human": human_size(stat.st_size), "modified": stat.st_mtime})
+    files.sort(key=lambda item: item.get("modified", 0), reverse=True)
     return {"files": files}
 
 
-@router.get("/pcap/info")
-def pcap_file_info(file: str) -> dict:
-    from pathlib import Path as _Path
-    safe = _Path(file).name
-    path = repo_root() / "data" / "pcap" / safe
-    if not path.exists():
-        return {"error": "not found"}
+def _pcap_info(path: Path) -> dict:
     try:
         import csv, io, shutil, subprocess as sp
         # capinfos reads only PCAP headers — instant even on multi-GB files
@@ -172,6 +182,24 @@ def pcap_file_info(file: str) -> dict:
         "size_bytes": size,
         "protocols": sorted(protos),
     }
+
+
+def _resolve_pcap_path(file: str) -> Path | None:
+    pcap_dir = (repo_root() / "data" / "pcap").resolve()
+    path = (pcap_dir / file).resolve()
+    try:
+        path.relative_to(pcap_dir)
+    except ValueError:
+        return None
+    return path if path.exists() and path.is_file() else None
+
+
+@router.get("/pcap/info")
+def pcap_file_info(file: str) -> dict:
+    path = _resolve_pcap_path(file)
+    if not path:
+        return {"error": "not found"}
+    return _pcap_info(path)
 
 
 @router.get("/logs/files")
@@ -356,14 +384,19 @@ def capture_replay(request: CaptureReplayRequest) -> dict:
             target = pcap_dir / Path(request.pcap).name
             target.write_bytes(data)
             target_pcap = str(target.relative_to(repo_root()))
+            file_data = {"filename": target.name, "from_folder": False}
+            file_info = _pcap_info(target)
         else:
             # file selected from data/pcap/ folder — just the filename
-            candidate = repo_root() / "data" / "pcap" / request.pcap
-            target_pcap = str(candidate.relative_to(repo_root())) if candidate.exists() else request.pcap
+            selected = request.pcap
+            resolved = _resolve_pcap_path(selected)
+            target_pcap = str(resolved.relative_to(repo_root())) if resolved else request.pcap
+            file_data = {"filename": selected, "from_folder": True}
+            file_info = _pcap_info(resolved) if resolved else None
 
         _clear_replay_state()
         _replay_jobs[_REPLAY_JOB_ID] = {"lines": [], "done": False, "result": None, "error": None}
-        _save_replay_state({"running": True, "done": False, "lines": [], "result": None, "error": None})
+        _save_replay_state({"running": True, "done": False, "lines": [], "result": None, "error": None, "file_data": file_data, "file_info": file_info})
         t = threading.Thread(
             target=_run_replay_job,
             args=(target_pcap, request.keep, request.now, Path(target_pcap).name),
@@ -379,17 +412,20 @@ def capture_replay(request: CaptureReplayRequest) -> dict:
 def capture_replay_status() -> dict:
     job = _replay_jobs.get(_REPLAY_JOB_ID)
     if job:
+        persisted = _load_replay_state()
         state = {
             "running": not job["done"],
             "done": job["done"],
             "lines": job["lines"],
             "result": job.get("result"),
             "error": job.get("error"),
+            "file_data": persisted.get("file_data"),
+            "file_info": persisted.get("file_info"),
         }
         _save_replay_state(state)
         return state
     state = _load_replay_state()
-    return {k: state.get(k) for k in ("running", "done", "lines", "result", "error")}
+    return {k: state.get(k) for k in ("running", "done", "lines", "result", "error", "file_data", "file_info")}
 
 
 @router.post("/replay/clear")

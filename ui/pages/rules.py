@@ -30,7 +30,7 @@ def layout() -> html.Div:
     return html.Div([
         topbar("Rules", dcc.Interval(id="rules-poll", interval=60_000, n_intervals=0), html.Button([html.I(className="ti ti-refresh", style={"fontSize": "13px"}), " Refresh"], id="rules-refresh-btn", className="topbar-btn", n_clicks=0), html.Button([html.I(className="ti ti-player-play", style={"fontSize": "13px"}), " Compile"], id="rules-compile-btn", className="topbar-btn primary", n_clicks=0)),
         html.Div(id="rules-banner"),
-        html.Div(className="content", style={"paddingBottom": "20px"}, children=[
+        html.Div(className="content", children=[
             html.Div(id="rules-metrics", children=_metrics_row(0, 0, 0), style={"flexShrink": "0"}),
             html.Div(className="filterbar", style={"marginBottom": "4px", "flexShrink": "0"}, children=[
                 html.I(className="ti ti-search", style={"fontSize": "14px", "color": "#888780", "flexShrink": "0"}),
@@ -41,7 +41,7 @@ def layout() -> html.Div:
                 dcc.Upload(id="rules-import-upload", children=html.Button([html.I(className="ti ti-file-import", style={"fontSize": "12px"}), " Import"], className="topbar-btn"), multiple=False),
                 html.Button([html.I(className="ti ti-plus", style={"fontSize": "12px"}), " New rule"], id="rules-new-btn", className="topbar-btn primary", n_clicks=0),
             ]),
-            html.Div(style=lrow(fill=True), children=[
+            html.Div(style={**lrow(), "height": "clamp(500px, calc(100vh - 220px), 900px)", "minHeight": "500px", "marginBottom": "20px"}, children=[
                 html.Div(className="card", style=ltable(fill=True, min_h=500), children=[html.Div(className="card-header", children=[html.Span("Rules", className="card-title"), html.Span(id="rules-count-label", style={"fontSize": "11px", "color": "#888780"})]), html.Div(id="rules-list", children=_rules_table([]), className="table-panel-body")]),
                 html.Div(id="rules-editor-wrap", style={"display": "flex", "flexDirection": "column", "minHeight": "0"}, children=_editor_card()),
             ]),

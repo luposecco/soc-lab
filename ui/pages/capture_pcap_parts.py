@@ -105,7 +105,7 @@ def folder_file_row(name: str, size_human: str, btn_id: dict) -> html.Div:
 def pcap_folder_preview(files: list[dict]) -> html.Div:
     if not files:
         return html.Div("No PCAP files in data/pcap/ — drop files there or upload above.", style={"fontSize": "12px", "color": "#888780", "padding": "6px 0"})
-    return html.Div([folder_file_row(f["name"], f.get("size_human", ""), {"type": "pcap-folder-pick", "name": f["name"]}) for f in files[:3]])
+    return html.Div([folder_file_row(f["name"], f.get("size_human", ""), {"type": "pcap-folder-pick", "name": f["name"]}) for f in files[:5]])
 
 
 def overlay(overlay_id: str, title: str, files: list[dict], btn_type: str) -> html.Div:

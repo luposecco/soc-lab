@@ -10,11 +10,21 @@ router = APIRouter(prefix="/api/alerts")
 
 _SEV_MAP = {"critical": 1, "high": 2, "medium": 3, "low": 4}
 _SEV_MAP_REV = {v: k for k, v in _SEV_MAP.items()}
+_SEVERITIES = ("high", "medium", "low")
 
 
 def _es():
     from core.elastic.client import client
     return client()
+
+
+def _severity_term_field() -> str:
+    return "event.severity_label.keyword"
+
+
+def _normalize_severity(value: Any) -> str:
+    label = str(value or "").lower()
+    return label if label in _SEVERITIES else "info"
 
 
 @router.get("")
@@ -32,8 +42,8 @@ def alerts_list(
             must.append({"query_string": {"query": q, "default_operator": "AND"}})
         if dataset:
             must.append({"term": {"event.dataset.keyword": dataset}})
-        if severity and severity in _SEV_MAP:
-            must.append({"term": {"rule.severity": _SEV_MAP[severity]}})
+        if severity and severity in _SEVERITIES:
+            must.append({"term": {_severity_term_field(): severity}})
         query: dict[str, Any] = {"match_all": {}} if not must else {"bool": {"must": must}}
         result = es.options(ignore_status=[404]).search(
             index="soc-alerts",
@@ -41,7 +51,7 @@ def alerts_list(
             sort=[{"@timestamp": {"order": "desc"}}],
             size=size,
             from_=offset,
-            source=["@timestamp", "alert.signature", "alert.severity", "alert.category", "alert.action",
+            source=["@timestamp", "event.severity_label", "alert.signature", "alert.severity", "alert.category", "alert.action",
                     "source.ip", "destination.ip", "destination.port", "network.transport",
                     "event.dataset", "rule.name", "tags"],
         )
@@ -60,12 +70,21 @@ def alerts_timeline(minutes: int = 60, buckets: int = 12) -> dict:
             index="soc-alerts",
             size=0,
             query={"range": {"@timestamp": {"gte": f"now-{minutes}m"}}},
-            aggs={"buckets": {"date_histogram": {"field": "@timestamp", "fixed_interval": f"{interval_ms}ms",
-                                                  "min_doc_count": 0,
-                                                  "extended_bounds": {"min": f"now-{minutes}m", "max": "now"}}}},
+            aggs={"buckets": {
+                "date_histogram": {"field": "@timestamp", "fixed_interval": f"{interval_ms}ms",
+                                   "min_doc_count": 0,
+                                   "extended_bounds": {"min": f"now-{minutes}m", "max": "now"}},
+                "aggs": {"by_severity": {"terms": {"field": _severity_term_field(), "size": 10}}},
+            }},
         )
         raw = result.get("aggregations", {}).get("buckets", {}).get("buckets", [])
-        return {"buckets": [{"count": b["doc_count"]} for b in raw[-buckets:]]}
+        return {"buckets": [{
+            "count": b["doc_count"],
+            "by_severity": {
+                _normalize_severity(sb.get("key")): sb.get("doc_count", 0)
+                for sb in b.get("by_severity", {}).get("buckets", [])
+            },
+        } for b in raw[-buckets:]]}
     except Exception:
         return {"buckets": []}
 
@@ -79,12 +98,12 @@ def alerts_stats() -> dict:
             query={"match_all": {}},
             size=0,
             aggs={
-                "by_severity": {"terms": {"field": "rule.severity", "size": 10}},
+                "by_severity": {"terms": {"field": _severity_term_field(), "size": 10}},
                 "by_dataset": {"terms": {"field": "event.dataset.keyword", "size": 10}},
             },
         )
         total = result.get("hits", {}).get("total", {}).get("value", 0)
-        by_sev = {_SEV_MAP_REV.get(b["key"], str(b["key"])): b["doc_count"]
+        by_sev = {_normalize_severity(b["key"]): b["doc_count"]
                   for b in result.get("aggregations", {}).get("by_severity", {}).get("buckets", [])}
         by_dataset = {b["key"]: b["doc_count"]
                       for b in result.get("aggregations", {}).get("by_dataset", {}).get("buckets", [])}

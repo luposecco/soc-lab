@@ -100,8 +100,8 @@ def update_alerts_badge(_n: int):
     data = api_get("/api/alerts/stats")
     if isinstance(data, dict) and not data.get("error"):
         total = data.get("total", 0)
-        crit = data.get("by_severity", {}).get("critical", 0)
-        count = crit if crit > 0 else total
+        high = data.get("by_severity", {}).get("high", 0)
+        count = high if high > 0 else total
         return str(count) if count > 0 else ""
     return ""
 

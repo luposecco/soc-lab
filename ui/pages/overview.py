@@ -10,6 +10,19 @@ from ui.helpers import api_get, error_banner, lcol, lpanel, lrow, ltable, metric
 dash.register_page(__name__, path="/")
 
 _TIME_OPTS = [("Live", "live"), ("1h", "1h"), ("6h", "6h"), ("24h", "24h")]
+_SEV_COLORS = {"high": "#E24B4A", "medium": "#BA7517", "low": "#378ADD"}
+
+
+def _severity_label(alert: dict[str, Any]) -> str:
+    value = alert.get("event", {}).get("severity_label") or alert.get("event.severity_label")
+    label = str(value or "").lower()
+    if label in ("high", "medium", "low"):
+        return label
+    sev = alert.get("alert", {}).get("severity") or alert.get("alert.severity")
+    try:
+        return {1: "high", 2: "high", 3: "medium", 4: "low"}.get(int(sev), "info")
+    except Exception:
+        return "info"
 
 
 def _timeline_bars(buckets: list[dict]) -> html.Div:
@@ -20,7 +33,16 @@ def _timeline_bars(buckets: list[dict]) -> html.Div:
         bars = []
         for b in buckets:
             pct = max(4, int(b.get("count", 0) / max_c * 100))
-            bars.append(html.Div(style={"flex": "1", "height": f"{pct}%", "background": "#378ADD", "borderRadius": "2px 2px 0 0"}))
+            by_sev = b.get("by_severity", {}) or {}
+            total = sum(int(by_sev.get(sev, 0) or 0) for sev in ("high", "medium", "low")) or b.get("count", 0) or 1
+            segments = []
+            for sev in ("low", "medium", "high"):
+                val = int(by_sev.get(sev, 0) or 0)
+                if val:
+                    segments.append(html.Div(style={"height": f"{val / total * 100:.1f}%", "background": _SEV_COLORS[sev]}))
+            if not segments:
+                segments = [html.Div(style={"height": "100%", "background": "#378ADD"})]
+            bars.append(html.Div(segments, style={"flex": "1", "height": f"{pct}%", "borderRadius": "2px 2px 0 0", "overflow": "hidden", "display": "flex", "flexDirection": "column-reverse"}))
     return html.Div(bars, className="timeline-chart", style={"height": "70px"})
 
 
@@ -40,11 +62,7 @@ def _service_row(card: dict) -> html.Tr:
 
 
 def _recent_alert_row(a: dict) -> html.Tr:
-    sev = a.get("alert", {}).get("severity") or a.get("alert.severity")
-    try:
-        sev_str = {1: "critical", 2: "high", 3: "medium", 4: "low"}.get(int(sev), "info")
-    except Exception:
-        sev_str = "info"
+    sev_str = _severity_label(a)
     sig = a.get("alert", {}).get("signature") or a.get("alert.signature") or a.get("rule", {}).get("name") or "—"
     src = a.get("source", {}).get("ip") or a.get("source.ip") or "—"
     dst = a.get("destination", {}).get("ip") or a.get("destination.ip") or "—"
@@ -72,12 +90,12 @@ def _build(summary: dict, stats: dict, alerts: dict, svc_data: dict, rules_data:
     indices = summary.get("indices", [])
     total_docs = sum(int(idx.get("docs.count") or 0) for idx in indices)
     active_alerts = stats.get("total", 0)
-    crit = stats.get("by_severity", {}).get("critical", 0)
+    high = stats.get("by_severity", {}).get("high", 0)
     svc_color = "green" if running_svc == total_svc and total_svc > 0 else "amber" if running_svc > 0 else "red"
-    alert_color = "red" if crit > 0 else "amber" if active_alerts > 0 else "green"
+    alert_color = "red" if high > 0 else "amber" if active_alerts > 0 else "green"
 
     metrics = html.Div(className="metrics cols5", style={"flexShrink": "0"}, children=[
-        metric_card("Active alerts", str(active_alerts), f"{crit} critical", alert_color),
+        metric_card("Active alerts", str(active_alerts), f"{high} high", alert_color),
         metric_card("Flow events", "—", "network flows", "blue"),
         metric_card("Suricata docs", f"{total_docs:,}", "total indexed", "blue"),
         metric_card("Services", f"{running_svc}/{total_svc}", "running", svc_color),
@@ -95,8 +113,9 @@ def _build(summary: dict, stats: dict, alerts: dict, svc_data: dict, rules_data:
         html.Div(style={"display": "flex", "justifyContent": "space-between", "marginTop": "6px", "fontSize": "11px", "color": "#888780"},
                  children=[html.Span("60m ago"), html.Span("now")]),
         html.Div(style={"display": "flex", "gap": "14px", "marginTop": "12px"}, children=[
-            html.Div([html.Div(style={"width": "10px", "height": "10px", "background": "#E24B4A", "borderRadius": "2px", "display": "inline-block", "marginRight": "6px"}), html.Span("Critical", style={"fontSize": "12px", "color": "#888780"})]),
-            html.Div([html.Div(style={"width": "10px", "height": "10px", "background": "#378ADD", "borderRadius": "2px", "display": "inline-block", "marginRight": "6px"}), html.Span("High / Med", style={"fontSize": "12px", "color": "#888780"})]),
+            html.Div([html.Div(style={"width": "10px", "height": "10px", "background": _SEV_COLORS["high"], "borderRadius": "2px", "display": "inline-block", "marginRight": "6px"}), html.Span("High", style={"fontSize": "12px", "color": "#888780"})]),
+            html.Div([html.Div(style={"width": "10px", "height": "10px", "background": _SEV_COLORS["medium"], "borderRadius": "2px", "display": "inline-block", "marginRight": "6px"}), html.Span("Medium", style={"fontSize": "12px", "color": "#888780"})]),
+            html.Div([html.Div(style={"width": "10px", "height": "10px", "background": _SEV_COLORS["low"], "borderRadius": "2px", "display": "inline-block", "marginRight": "6px"}), html.Span("Low", style={"fontSize": "12px", "color": "#888780"})]),
         ]),
     ])
 

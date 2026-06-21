@@ -11,7 +11,6 @@ dash.register_page(__name__, path="/alerts")
 
 _SEV_OPTIONS = [
     {"label": "All severities", "value": ""},
-    {"label": "Critical", "value": "critical"},
     {"label": "High", "value": "high"},
     {"label": "Medium", "value": "medium"},
     {"label": "Low", "value": "low"},
@@ -27,12 +26,20 @@ def _fmt_ts(ts: str) -> str:
     return ts[:19].replace("T", " ") if ts else "—"
 
 
-def _alert_row(alert: dict[str, Any]) -> html.Tr:
+def _severity_label(alert: dict[str, Any]) -> str:
+    value = alert.get("event", {}).get("severity_label") or alert.get("event.severity_label")
+    label = str(value or "").lower()
+    if label in ("high", "medium", "low"):
+        return label
     sev = alert.get("alert", {}).get("severity") or alert.get("alert.severity")
     try:
-        sev_str = {1: "critical", 2: "high", 3: "medium", 4: "low"}.get(int(sev), "info")
+        return {1: "high", 2: "high", 3: "medium", 4: "low"}.get(int(sev), "info")
     except Exception:
-        sev_str = str(sev).lower() if sev else "info"
+        return str(sev).lower() if sev else "info"
+
+
+def _alert_row(alert: dict[str, Any]) -> html.Tr:
+    sev_str = _severity_label(alert)
     sig = alert.get("alert", {}).get("signature") or alert.get("alert.signature") or alert.get("rule", {}).get("name") or "—"
     src = alert.get("source", {}).get("ip") or alert.get("source.ip") or "—"
     dst = alert.get("destination", {}).get("ip") or alert.get("destination.ip") or "—"
@@ -53,6 +60,9 @@ def _alert_row(alert: dict[str, Any]) -> html.Tr:
     ])
 
 
+_SEV_COLORS = {"high": "#E24B4A", "medium": "#BA7517", "low": "#378ADD"}
+
+
 def _timeline_bars(buckets: list[dict]) -> html.Div:
     if not buckets:
         return html.Div(className="timeline-chart", style={"height": "64px"})
@@ -60,7 +70,16 @@ def _timeline_bars(buckets: list[dict]) -> html.Div:
     bars = []
     for b in buckets:
         pct = max(4, int(b.get("count", 0) / max_c * 100))
-        bars.append(html.Div(style={"flex": "1", "height": f"{pct}%", "background": "#378ADD", "borderRadius": "2px 2px 0 0"}))
+        by_sev = b.get("by_severity", {}) or {}
+        total = sum(int(by_sev.get(sev, 0) or 0) for sev in ("high", "medium", "low")) or b.get("count", 0) or 1
+        segments = []
+        for sev in ("low", "medium", "high"):
+            val = int(by_sev.get(sev, 0) or 0)
+            if val:
+                segments.append(html.Div(style={"height": f"{val / total * 100:.1f}%", "background": _SEV_COLORS[sev]}))
+        if not segments:
+            segments = [html.Div(style={"height": "100%", "background": "#378ADD"})]
+        bars.append(html.Div(segments, style={"flex": "1", "height": f"{pct}%", "borderRadius": "2px 2px 0 0", "overflow": "hidden", "display": "flex", "flexDirection": "column-reverse"}))
     return html.Div(bars, className="timeline-chart", style={"height": "64px"})
 
 
@@ -78,15 +97,14 @@ def _alerts_table(alerts: list[dict]) -> html.Table | html.Div:
 def _stats_metrics(stats: dict) -> html.Div:
     total = stats.get("total", 0)
     by_sev = stats.get("by_severity", {})
-    crit = by_sev.get("critical", 0)
     high = by_sev.get("high", 0)
     med = by_sev.get("medium", 0)
     low = by_sev.get("low", 0)
     return html.Div(className="metrics", children=[
         metric_card("Total alerts", f"{total:,}", "in soc-alerts", "blue"),
-        metric_card("Critical", str(crit), "severity 1", "red" if crit > 0 else "blue"),
-        metric_card("High", str(high), "severity 2", "amber" if high > 0 else "blue"),
-        metric_card("Med / Low", f"{med} / {low}", "severity 3 / 4", "green"),
+        metric_card("High", str(high), "event.severity_label", "red" if high > 0 else "blue"),
+        metric_card("Medium", str(med), "event.severity_label", "amber" if med > 0 else "blue"),
+        metric_card("Low", str(low), "event.severity_label", "green"),
     ])
 
 
@@ -120,12 +138,17 @@ def layout() -> html.Div:
             html.Div(className="card", style={**lpanel(min_h=140, shrink=True)}, children=[
                 html.Div(className="card-header", style={"marginBottom": "8px"}, children=[
                     html.Span("Alert volume", className="card-title"),
-                    html.Span("by severity · 5-min buckets", style={"fontSize": "11px", "color": "#888780"}),
+                    html.Span("by event.severity_label · 5-min buckets", style={"fontSize": "11px", "color": "#888780"}),
                 ]),
                 html.Div(id="alerts-timeline", children=_timeline_bars(timeline.get("buckets", []))),
                 html.Div(style={"display": "flex", "justifyContent": "space-between", "marginTop": "5px",
                                  "fontSize": "11px", "color": "#888780"},
                          children=[html.Span("60m ago"), html.Span("now")]),
+                html.Div(style={"display": "flex", "gap": "14px", "marginTop": "8px", "fontSize": "11px", "color": "#888780"}, children=[
+                    html.Span([html.Span(style={"display": "inline-block", "width": "9px", "height": "9px", "borderRadius": "2px", "background": _SEV_COLORS["high"], "marginRight": "5px"}), "High"]),
+                    html.Span([html.Span(style={"display": "inline-block", "width": "9px", "height": "9px", "borderRadius": "2px", "background": _SEV_COLORS["medium"], "marginRight": "5px"}), "Medium"]),
+                    html.Span([html.Span(style={"display": "inline-block", "width": "9px", "height": "9px", "borderRadius": "2px", "background": _SEV_COLORS["low"], "marginRight": "5px"}), "Low"]),
+                ]),
             ]),
 
             html.Div(className="card", style={**ltable(fill=True, min_h=300), "marginBottom": "20px"}, children=[
