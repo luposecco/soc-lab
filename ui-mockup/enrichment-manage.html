@@ -12,7 +12,7 @@
   <div class="sidebar" id="sidebar"></div>
   <div class="main">
     <div class="topbar">
-      <span class="page-title">Enrichment Management</span>
+      <span class="page-title">Enrichment</span>
       <div class="pages">
         <a class="page-btn" href="enrichment.html">Overview</a>
         <a class="page-btn active" href="enrichment-manage.html">Management</a>
@@ -21,26 +21,186 @@
       <button class="topbar-btn"><i class="ti ti-refresh" style="font-size:13px"></i> Refresh</button>
     </div>
     <div class="content">
-      <div class="row2 enrich-layout">
+      <div class="row23 enrich-layout manage-layout">
+
+        <!-- Left: lists -->
         <div class="col">
-          <div class="card"><div class="card-header"><span class="card-title">Configured enrichments</span><span class="card-action">select one to manage</span></div><div class="list-rows">
-            <div class="list-row"><div class="list-main"><div class="list-title">Example Risk</div><div class="list-desc">Risk fields for matching alerts.</div><div class="list-meta"><span class="meta-pill">play_batch</span><span class="meta-pill">lab, customer-prod</span></div></div></div>
-            <div class="list-row"><div class="list-main"><div class="list-title">Selected Alert Annotator</div><div class="list-desc">Single-item run with params.</div><div class="list-meta"><span class="meta-pill">play_single</span><span class="meta-pill">lab</span></div></div></div>
-            <div class="list-row"><div class="list-main"><div class="list-title">External IoC Sync</div><div class="list-desc">Periodic derived-document sync.</div><div class="list-meta"><span class="meta-pill">play_periodic</span><span class="meta-pill">customer-prod</span></div></div></div>
-          </div></div>
-        </div>
-        <div class="col">
-          <div class="card">
-            <div class="card-header"><span class="card-title">Management pane</span><span class="card-action mono">enrichments.yml</span></div>
-            <div class="tabs"><button class="tab active">Config</button><button class="tab">Runtime</button></div>
-            <div class="result-row"><span class="result-key">Name</span><span class="result-val">Example Risk</span></div>
-            <div class="result-row"><span class="result-key">Script</span><span class="result-val">scripts/example_enrichment.py</span></div>
-            <div class="result-row"><span class="result-key">Targets</span><span class="result-val">lab, customer-prod</span></div>
-            <div class="result-row"><span class="result-key">Type</span><span class="result-val">play_batch</span></div>
-            <div class="result-row"><span class="result-key">Enabled</span><span><span class="tag running">true</span></span></div>
-            <div class="terminal short" style="margin-top:12px; height:96px;"><div><span class="t-blue">example_risk:</span></div><div>  <span class="t-gray">targets:</span> [lab, customer-prod]</div><div>  <span class="t-gray">enabled:</span> true</div></div>
+
+          <!-- Enrichment scripts -->
+          <div class="card manage-list-card">
+            <div class="card-header">
+              <span class="card-title">Enrichment scripts</span>
+              <button class="rule-btn"><i class="ti ti-plus" style="font-size:11px"></i> New script</button>
+            </div>
+            <div class="filterbar" style="margin-bottom:10px">
+              <i class="ti ti-search" style="font-size:14px;color:#888780;flex-shrink:0"></i>
+              <input class="search-input" placeholder="Search scripts or enrichment names...">
+            </div>
+            <div class="list-rows compact-list">
+              <div class="list-row active-row">
+                <div class="list-main">
+                  <div class="list-title">Example Risk <span class="tag blue">play_batch</span></div>
+                  <div class="list-desc mono">scripts/example_enrichment.py</div>
+                  <div class="list-meta"><span class="meta-pill">targets: lab, customer-prod</span><span class="meta-pill">enabled</span></div>
+                </div>
+              </div>
+              <div class="list-row">
+                <div class="list-main">
+                  <div class="list-title">Selected Alert Annotator <span class="tag purple">play_single</span></div>
+                  <div class="list-desc mono">scripts/annotate_single.py</div>
+                  <div class="list-meta"><span class="meta-pill">params: _id, ticket, note</span></div>
+                </div>
+              </div>
+              <div class="list-row">
+                <div class="list-main">
+                  <div class="list-title">External IoC Sync <span class="tag amber-tag">play_periodic</span></div>
+                  <div class="list-desc mono">scripts/ioc_sync.py</div>
+                  <div class="list-meta"><span class="meta-pill">schedule: every 15m</span></div>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+
+          <!-- Cluster nodes -->
+          <div class="card manage-list-card">
+            <div class="card-header">
+              <span class="card-title">Cluster nodes</span>
+              <button class="rule-btn"><i class="ti ti-plus" style="font-size:11px"></i> Add node</button>
+            </div>
+            <div class="list-rows compact-list">
+              <div class="list-row">
+                <div class="list-main">
+                  <div class="list-title">lab <span class="tag running">internal</span></div>
+                  <div class="list-desc mono">http://localhost:9200</div>
+                  <div class="list-meta"><span class="meta-pill">no auth</span><span class="meta-pill">audit writer</span></div>
+                </div>
+              </div>
+              <div class="list-row">
+                <div class="list-main">
+                  <div class="list-title">customer-prod <span class="tag blue">api_key</span></div>
+                  <div class="list-desc mono">https://es01:9200, https://es02:9200</div>
+                  <div class="list-meta"><span class="meta-pill">external</span><span class="meta-pill">CUSTOMER_PROD_ES_API_KEY</span></div>
+                </div>
+              </div>
+              <div class="list-row">
+                <div class="list-main">
+                  <div class="list-title">research <span class="tag warning">basic</span></div>
+                  <div class="list-desc mono">https://research-es:9200</div>
+                  <div class="list-meta"><span class="meta-pill">external</span><span class="meta-pill">RESEARCH_ES_PASS</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /left col -->
+
+        <!-- Right: editor (populates on selection; empty when nothing selected) -->
+        <div class="col">
+          <div class="card edit-pane">
+
+            <!-- Context header — icon + name changes per selection type -->
+            <div class="card-header">
+              <span class="card-title" style="display:flex;align-items:center;gap:9px">
+                <span class="edit-context-icon script"><i class="ti ti-file-code"></i></span>
+                Example Risk
+              </span>
+              <span class="tag blue">play_batch</span>
+            </div>
+
+            <!-- Script config fields -->
+            <div class="form-grid compact" style="flex-shrink:0">
+              <label class="field">
+                <span>Config key</span>
+                <input class="setting-input mono" value="example_risk">
+              </label>
+              <label class="field">
+                <span>Display name</span>
+                <input class="setting-input" value="Example Risk">
+              </label>
+              <label class="field" style="grid-column:span 2">
+                <span>Script path</span>
+                <div class="inline-field" style="align-items:stretch">
+                  <input class="setting-input mono" style="flex:1" value="scripts/example_enrichment.py">
+                  <button class="rule-btn" style="align-self:stretch;padding:0 12px;white-space:nowrap"><i class="ti ti-plus" style="font-size:11px"></i> New script</button>
+                </div>
+              </label>
+              <label class="field">
+                <span>Run type</span>
+                <select class="select">
+                  <option selected>play_batch</option>
+                  <option>play_single</option>
+                  <option>play_periodic</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Enabled</span>
+                <select class="select">
+                  <option selected>true</option>
+                  <option>false</option>
+                </select>
+              </label>
+              <div class="field" style="grid-column:span 2">
+                <span>Target nodes</span>
+                <div class="node-checklist">
+                  <label class="node-check"><input type="checkbox" checked><span class="mono">lab</span><span class="tag running" style="font-size:10px;margin-left:auto">internal</span></label>
+                  <label class="node-check"><input type="checkbox" checked><span class="mono">customer-prod</span><span class="tag blue" style="font-size:10px;margin-left:auto">api_key</span></label>
+                  <label class="node-check"><input type="checkbox"><span class="mono">research</span><span class="tag warning" style="font-size:10px;margin-left:auto">basic</span></label>
+                </div>
+              </div>
+              <label class="field" style="grid-column:span 2">
+                <span>Schedule</span>
+                <input class="setting-input mono" placeholder="e.g. 30s · 15m · 2h  (leave empty to disable)">
+              </label>
+              <label class="field" style="grid-column:span 2">
+                <span>Description</span>
+                <textarea class="setting-input textarea">Risk fields for matching alerts.</textarea>
+              </label>
+            </div>
+
+            <!-- Action row -->
+            <div class="button-row" style="flex-shrink:0">
+              <button class="topbar-btn"><i class="ti ti-check" style="font-size:12px"></i> Validate</button>
+              <button class="topbar-btn primary"><i class="ti ti-device-floppy" style="font-size:12px"></i> Save</button>
+              <button class="topbar-btn danger" style="margin-left:auto"><i class="ti ti-trash" style="font-size:12px"></i></button>
+            </div>
+
+            <!-- Script code editor -->
+            <textarea class="rule-code enrich-script-code" spellcheck="false">"""Example enrichment script using the SOC Lab enrichment SDK."""
+
+from __future__ import annotations
+
+from enrich_sdk import EnrichmentContext
+
+ENRICHMENT_META = {
+    "type": "play_batch",
+    "name": "Example Risk",
+    "description": "Adds a risk score to severe alerts missing one.",
+}
+
+
+def run(ctx: EnrichmentContext) -> None:
+    ctx.update_by_query(
+        index="soc-alerts",
+        query={
+            "bool": {
+                "must": [{"term": {"alert.severity": 1}}],
+                "must_not": [{"exists": {"field": "risk.score"}}],
+            }
+        },
+        fields={
+            "risk.score": 95,
+            "risk.reason": "Critical severity Suricata alert",
+            "risk.enriched_by": "example_risk",
+        },
+    )</textarea>
+
+            <div class="mono" style="font-size:10px;color:#888780;flex-shrink:0;margin-top:8px">
+              data/enrichments/scripts/example_enrichment.py · config: data/enrichments/config/enrichments.yml
+            </div>
+
+          </div><!-- /edit-pane -->
+        </div><!-- /right col -->
+
       </div>
     </div>
   </div>

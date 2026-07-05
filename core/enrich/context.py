@@ -56,6 +56,7 @@ class EnrichmentContext:
         self.enrichment = enrichment
         self.run_id = run_id or f"{enrichment}-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:6]}"
         self.dry_run = dry_run
+        self.params: dict[str, Any] = {}
         self._stats = {"created": 0, "updated": 0, "deleted": 0}
 
     @property

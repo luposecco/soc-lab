@@ -42,6 +42,35 @@ class EnrichRunRequest(BaseModel):
     params: dict[str, Any] = Field(default_factory=dict)
 
 
+class EnrichmentSaveRequest(BaseModel):
+    display_name: str = ""
+    script: str = ""
+    targets: list[str] = Field(default_factory=list)
+    enabled: bool = True
+    on_log: bool = False
+    schedule: str = ""
+    description: str = ""
+
+
+class ClusterSaveRequest(BaseModel):
+    mode: str = "external"
+    hosts: list[str] = Field(default_factory=list)
+    auth_type: str = "none"
+    auth_env: str = ""
+    auth_user: str = ""
+    auth_pass_env: str = ""
+
+
+class ScriptSaveRequest(BaseModel):
+    path: str
+    content: str
+
+
+class ScriptValidateRequest(BaseModel):
+    content: str
+    path: str = ""
+
+
 class RuleFileWriteRequest(BaseModel):
     path: str
     content: str

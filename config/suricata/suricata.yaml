@@ -50,6 +50,9 @@ outputs:
               app-layer: true
               flow: true
             tagged-packets: yes
+        - files:
+            force-magic: yes
+            force-hash: [md5, sha256]
         - flow
         - dns
         - http:

@@ -16,25 +16,37 @@ from core.enrich.scripts import invoke_script, load_script
 _DEFAULT_CONFIG = repo_root() / "data" / "enrichments" / "config" / "enrichments.yml"
 
 
+def _parse_schedule(raw: Any) -> str:
+    if not raw:
+        return ""
+    if isinstance(raw, str):
+        return raw.strip()
+    if isinstance(raw, dict):
+        return raw.get("every", raw.get("cron", ""))
+    return ""
+
+
 @dataclass
 class EnrichmentDef:
     name: str
     script: str
     targets: list[str]
     enabled: bool = True
-    schedule: dict[str, Any] = field(default_factory=dict)
-    meta: dict[str, Any] = field(default_factory=dict)
+    on_log: bool = False
+    schedule: str = ""
+    display_name: str = ""
+    description: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "name": self.name,
+            "display_name": self.display_name or self.name,
             "script": self.script,
             "targets": self.targets,
             "enabled": self.enabled,
+            "on_log": self.on_log,
             "schedule": self.schedule,
-            "type": self.meta.get("type", "play_batch"),
-            "display_name": self.meta.get("name", self.name),
-            "description": self.meta.get("description", ""),
+            "description": self.description,
         }
 
 
@@ -45,14 +57,15 @@ def load_enrichment_config(path: Path | None = None) -> list[dict[str, Any]]:
     raw = yaml.safe_load(config_path.read_text()) or {}
     enrichments = []
     for name, cfg in (raw.get("enrichments") or {}).items():
-        script = load_script(cfg.get("script", ""), f"enrich_meta_{name}")
         enrichments.append(EnrichmentDef(
             name=name,
             script=cfg.get("script", ""),
             targets=cfg.get("targets") or ["lab"],
             enabled=bool(cfg.get("enabled", True)),
-            schedule=cfg.get("schedule") or {},
-            meta=script.meta,
+            on_log=bool(cfg.get("on_log", False)),
+            schedule=_parse_schedule(cfg.get("schedule")),
+            display_name=cfg.get("name") or cfg.get("display_name") or name,
+            description=cfg.get("description", ""),
         ).to_dict())
     return enrichments
 
@@ -100,6 +113,5 @@ def run_enrichment(
     return {
         "run_id": run_id,
         "enrichment": name,
-        "type": script.meta.get("type", "play_batch"),
         "results": results,
     }

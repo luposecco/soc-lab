@@ -154,6 +154,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; f
 
 /* ── Rules ── */
 .rule-btn { padding: 4px 10px; border-radius: 6px; font-size: 12px; border: 0.5px solid rgba(0,0,0,0.15); cursor: pointer; background: transparent; color: #5f5e5a; font-family: inherit; }
+.rule-btn.icon-only { width: 26px; height: 26px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
 .rule-code { font-family: 'SF Mono','Fira Code',monospace; font-size: 12px; line-height: 1.6; background: #151515; color: #e2e0dc; border: none; border-radius: 12px; padding: 14px 16px; width: 100%; box-sizing: border-box; height: 100%; min-height: 200px; outline: none; resize: none; }
 
 /* ── Upload / PCAP ── */
@@ -196,6 +197,53 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; f
 .enrich-meta-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; font-size: 11px; color: #888780; }
 .enrich-inspector { display: flex; flex-direction: column; gap: 0; }
 .enrich-layout { align-items: start; }
+.active-row { background: #f7fbff; margin: -1px -6px 0; padding-left: 6px; padding-right: 6px; border-radius: 8px; border-bottom: none; }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.form-grid.compact { gap: 10px; }
+.field { display: flex; flex-direction: column; gap: 5px; font-size: 11px; color: #888780; }
+.field .setting-input, .field .select { width: 100%; }
+.textarea { min-height: 72px; resize: vertical; }
+.inline-field { display: flex; gap: 8px; align-items: center; }
+.inline-field .setting-input { flex: 1; min-width: 0; }
+.button-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.compact-list { gap: 0; }
+.compact-list .list-row { padding: 9px 0; }
+.enrich-row { align-items: center; }
+.enrich-row .list-title { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.row-actions { display: flex; gap: 5px; align-items: center; flex-shrink: 0; }
+.row-actions .rule-btn { padding: 3px 8px; font-size: 11px; }
+.manage-layout { align-items: stretch; }
+.manage-list-card { display: flex; flex-direction: column; min-height: 0; }
+.edit-pane { display: flex; flex-direction: column; min-height: 460px; overflow: hidden; }
+.enrich-script-code { flex: 1; min-height: 0; resize: none; margin-top: 12px; }
+.edit-context-icon { width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+.edit-context-icon.script { background: #EDE9FF; color: #5B2DB8; }
+.edit-context-icon.node { background: #E6F1FB; color: #185FA5; }
+.node-checklist { border: 0.5px solid rgba(0,0,0,0.15); border-radius: 7px; overflow: hidden; }
+.node-check { display: flex; align-items: center; gap: 8px; padding: 7px 10px; font-size: 13px; color: #1a1a18; border-bottom: 0.5px solid rgba(0,0,0,0.06); cursor: pointer; }
+.node-check:last-child { border-bottom: none; }
+.node-check:hover { background: #f7fbff; }
+.node-check input[type=checkbox] { flex-shrink: 0; cursor: pointer; }
+
+/* ── Edit panel overlay ── */
+.edit-panel-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.28); z-index: 100; display: none; cursor: pointer; }
+.edit-panel { position: fixed; left: calc(224px + 14px); right: 14px; top: 14px; bottom: 14px; background: #f4f3ef; z-index: 101; display: none; flex-direction: column; box-shadow: 0 32px 80px rgba(0,0,0,0.28), 0 8px 24px rgba(0,0,0,0.12); border-radius: 18px; border: 0.5px solid rgba(0,0,0,0.12); overflow: hidden; }
+.edit-panel-header { padding: 13px 18px; background: #fff; border-bottom: 0.5px solid rgba(0,0,0,0.1); display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.edit-panel-title { font-size: 14px; font-weight: 600; flex: 1; letter-spacing: -0.01em; }
+.edit-panel-body { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 16px; }
+
+
+/* ── Toggle in form ── */
+.toggle-field { display: flex; align-items: center; gap: 9px; padding-top: 5px; }
+.toggle-label { font-size: 12px; color: #1a1a18; user-select: none; }
+.toggle-label.off { color: #888780; }
+.meta-pill.on-log { background: #F0EAFA; color: #7B2FBE; }
+.rollback-detail td { background: #fafaf8; padding: 0 12px 12px 54px; }
+.rollback-detail.muted { display: none; }
+.diff-card { border: 0.5px solid rgba(0,0,0,0.08); border-radius: 10px; background: #fff; padding: 12px 14px; }
+.diff-title { font-size: 12px; font-weight: 600; margin-bottom: 10px; }
+.diff-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; font-size: 12px; }
+.diff-terminal { margin-top: 12px; height: 112px; }
 .config-modal-backdrop { position: absolute; inset: 0; background: rgba(244,243,239,0.78); backdrop-filter: blur(2px); }
 .config-modal { position: absolute; right: 18px; bottom: 18px; width: min(100%, 360px); background: #fff; border: 0.5px solid rgba(0,0,0,0.12); border-radius: 12px; padding: 14px 16px; box-shadow: 0 14px 40px rgba(0,0,0,0.14); }
 
@@ -233,6 +281,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; f
 .list-desc { font-size: 12px; color: #888780; margin-top: 3px; line-height: 1.45; }
 .list-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .meta-pill { font-size: 11px; color: #5f5e5a; background: #f4f3ef; border-radius: 999px; padding: 4px 8px; }
+.meta-pill.script { background: #f4f3ef; color: #5f5e5a; border: 0.5px solid rgba(0,0,0,0.08); }
+.meta-pill.target { background: #E6F1FB; color: #185FA5; }
+.meta-pill.enabled { background: #EAF3DE; color: #3B6D11; }
+.meta-pill.params { background: #F0EAFA; color: #7B2FBE; }
+.meta-pill.schedule { background: #FAEEDA; color: #854F0B; }
 
 /* ── Mode tabs (capture) ── */
 .mode-tab { padding: 6px 14px; font-size: 13px; font-weight: 500; border-radius: 7px; border: 0.5px solid rgba(0,0,0,0.2); background: transparent; color: #5f5e5a; cursor: pointer; display: flex; align-items: center; gap: 6px; font-family: inherit; }
@@ -255,7 +308,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; f
 @media (max-width: 900px) {
   .alias-layout, .row2, .row3, .row23, .row32, .metrics, .metrics.cols3, .metrics.cols5 { grid-template-columns: 1fr; }
   .topbar { flex-wrap: wrap; }
-  .enrich-meta-grid { grid-template-columns: 1fr; }
+  .enrich-meta-grid, .form-grid, .diff-grid { grid-template-columns: 1fr; }
+  .inline-field { flex-direction: column; align-items: stretch; }
   .config-modal { position: static; width: 100%; margin-top: 12px; }
   .config-modal-backdrop { display: none; }
 }
