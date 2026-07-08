@@ -1,6 +1,10 @@
+<div align="center">
+
 # SOC Lab
 
 > Local SOC lab for experimenting with detection, packet replay, live capture, and enrichment workflows.
+
+</div>
 
 ![Python](https://img.shields.io/badge/python-3.x-3776AB?style=flat-square&logo=python&logoColor=white)
 ![Docker](https://img.shields.io/badge/docker-compose-2496ED?style=flat-square&logo=docker&logoColor=white)
