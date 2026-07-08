@@ -7,7 +7,7 @@ import dash
 from dash import Input, Output, State, callback, ctx, dcc, html
 
 from ui.helpers import api_get, api_post, colorize_log, error_banner, lcol, lpanel, lrow, ltable, topbar
-from ui.pages.capture_pcap_parts import (
+from ui.pages.capture_pcap_widgets import (
     file_placeholder as _file_placeholder,
     folder_file_row as _folder_file_row,
     history_table as _history_table,

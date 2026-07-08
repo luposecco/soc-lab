@@ -1,57 +1,43 @@
 # SOC Lab
 
-SOC Lab is a local security operations lab built around:
+> Local SOC lab for experimenting with detection, packet replay, live capture, and enrichment workflows.
 
-- Elasticsearch
-- Kibana
-- Suricata
-- Filebeat
-- ElastAlert2
-- FastAPI
-- Dash
-- a Python enrichment SDK
+![Python](https://img.shields.io/badge/python-3.x-3776AB?style=flat-square&logo=python&logoColor=white)
+![Docker](https://img.shields.io/badge/docker-compose-2496ED?style=flat-square&logo=docker&logoColor=white)
+![FastAPI](https://img.shields.io/badge/api-FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)
+![Dash](https://img.shields.io/badge/ui-Dash-0A0A0A?style=flat-square&logo=plotly&logoColor=white)
+![Elasticsearch](https://img.shields.io/badge/search-Elasticsearch-005571?style=flat-square&logo=elasticsearch&logoColor=white)
+![Status](https://img.shields.io/badge/status-active%20development-orange?style=flat-square)
+![License](https://img.shields.io/badge/license-AGPLv3-blue?style=flat-square)
 
-It is designed for realistic security-data workflows, not just static demos. You can replay PCAPs, capture live traffic, ingest raw logs, test detections, recreate enterprise alias names, and run enrichment logic against one or more Elasticsearch targets.
+![SOC Lab overview](docs/images/overview.png)
 
-## Host Dependencies
+SOC Lab is a local security operations lab that approximates parts of a detection and analysis environment on a single machine. It combines containerized security tooling with a small FastAPI and Dash control plane so you can replay PCAPs, capture live traffic, test detection content, prototype log-ingest workflows, and experiment with Python-based enrichments against Elasticsearch.
 
-`./start.sh` installs the Python package requirements from `requirements.txt` into a local `.venv`, but it expects the host tools below to already exist.
+## Current Capabilities
 
-| Dependency | Required | Used for | Notes |
-| --- | --- | --- | --- |
-| Docker | Yes | Running Elasticsearch, Kibana, Suricata, Filebeat, and ElastAlert2 | `start.sh`, `stop.sh`, and `reset.sh` all depend on a working Docker daemon. |
-| Docker Compose v2 | Yes | Bringing the stack up with `docker compose` | The repo uses the `docker compose` subcommand, not legacy `docker-compose`. |
-| Python 3 | Yes | FastAPI, Dash, repo automation, enrichment, ingest helpers | `start.sh` creates `.venv` with `python3 -m venv`. |
-| Python `venv` support | Yes | Creating the local virtual environment | On some Linux distros this is a separate package such as `python3-venv`. |
-| `curl` | Yes | Startup health checks for Elasticsearch and Kibana | Used directly in `start.sh` and throughout the ops docs. |
-| `lsof` | Yes | Killing stale host processes bound to UI/API ports | Used by `start.sh`, `stop.sh`, and `reset.sh`. |
-| `dumpcap` | Optional | Live capture mode | Required for the live capture workflow implemented in `core/capture/live.py` and exposed through the current UI/API flow. Installed with Wireshark or tshark packages. |
-| `capinfos` | Optional | Fast PCAP metadata inspection in the capture UI/API | Used for packet count and duration in `/api/capture/pcap/info`. Usually installed with Wireshark. |
-| Ollama | Optional | AI-generated ingest pipelines | Required only for LLM-assisted pipeline generation/upload flows. |
-| `jq` | Optional | Pretty-printing JSON during manual verification and debugging | Used in docs/examples, not required for the lab to run. |
+- Replay PCAPs through Suricata and index the resulting telemetry into Elasticsearch.
+- Capture live traffic in rotating chunks and feed it back through the detection pipeline.
+- Prototype generic log ingestion with preprocessing, pipeline selection, and optional AI-assisted pipeline generation.
+- Manage rules, aliases, services, and enrichment runs from a simple web UI.
+- Experiment with a Python enrichment SDK that supports audit logging and rollback.
 
-Python packages installed automatically into `.venv` by `start.sh`:
+## Project Maturity
 
-- `python-evtx`
-- `pyyaml`
-- `elasticsearch`
-- `fastapi`
-- `uvicorn`
-- `dash`
-- `dash-ace`
-- `httpx`
-- `scapy`
+SOC Lab is under active development. PCAP replay and live capture are the most complete workflows; generic log ingest, enrichment, and some UI behavior are still being refined.
 
-Feature notes:
+| Area               | Status           | Notes                                                                                                            |
+| ------------------ | ---------------- | ---------------------------------------------------------------------------------------------------------------- |
+| PCAP replay        | Working          | Replays local `.pcap`/`.pcapng` files through Suricata and Filebeat into Elasticsearch.                          |
+| Live capture       | Working          | Captures `dumpcap` chunks and replays them through the same Suricata/Filebeat pipeline.                          |
+| Rule management    | Usable           | Supports rule inventory, validation, compile checks, and watcher-driven reload flows.                            |
+| Generic log ingest | Work in progress | Core flow exists, but broad format coverage and edge-case behavior have not been fully tested.                   |
+| Enrichment SDK     | Work in progress | SDK, audit, rollback, scheduler, and UI flows are under active iteration and should be treated as evolving APIs. |
+| UI polish          | Work in progress | The web control plane is functional, but some layout/state bugs remain.                                          |
 
-- Basic lab startup needs only the required dependencies in the table.
-- Live capture needs `dumpcap` permissions that allow your current user to run `dumpcap -D` successfully.
-- PCAP replay from existing files does not require `dumpcap`, but the richer PCAP info view uses `capinfos` when available.
-- AI pipeline generation is optional and only works when Ollama is running locally.
+## Quick Start
 
-## Quick Run
-
-Start everything:
+`./start.sh` installs Python dependencies into a local `.venv`, starts the Docker stack, and launches the FastAPI and Dash processes.
 
 ```bash
 ./start.sh
@@ -64,29 +50,58 @@ Open:
 - Kibana: `http://localhost:5601`
 - Elasticsearch: `http://localhost:9200`
 
-Stop everything:
+Operational helpers:
 
 ```bash
 ./stop.sh
-```
-
-Restart everything:
-
-```bash
 ./restart.sh
-```
-
-Destructive reset:
-
-```bash
 ./reset.sh
 ```
+
+## Host Dependencies
+
+The stack expects these host tools to already exist:
+
+| Dependency            | Required | Used for                                                           | Notes                                                                                                                                                                  |
+| --------------------- | -------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Docker                | Yes      | Running Elasticsearch, Kibana, Suricata, Filebeat, and ElastAlert2 | `start.sh`, `stop.sh`, and `reset.sh` all depend on a working Docker daemon.                                                                                           |
+| Docker Compose v2     | Yes      | Bringing the stack up with `docker compose`                        | The repo uses the `docker compose` subcommand, not legacy `docker-compose`.                                                                                            |
+| Python 3              | Yes      | FastAPI, Dash, repo automation, enrichment, ingest helpers         | `start.sh` creates `.venv` with `python3 -m venv`.                                                                                                                     |
+| Python `venv` support | Yes      | Creating the local virtual environment                             | On some Linux distros this is a separate package such as `python3-venv`.                                                                                               |
+| `curl`                | Yes      | Startup health checks for Elasticsearch and Kibana                 | Used directly in `start.sh` and throughout the ops docs.                                                                                                               |
+| `lsof`                | Yes      | Killing stale host processes bound to UI/API ports                 | Used by `start.sh`, `stop.sh`, and `reset.sh`.                                                                                                                         |
+| `dumpcap`             | Optional | Live capture mode                                                  | Required for the live capture workflow implemented in `core/capture/live.py` and exposed through the current UI/API flow. Installed with Wireshark or tshark packages. |
+| `capinfos`            | Optional | Fast PCAP metadata inspection in the capture UI/API                | Used for packet count and duration in `/api/capture/pcap/info`. Usually installed with Wireshark.                                                                      |
+| Ollama                | Optional | AI-generated ingest pipelines                                      | Required only for LLM-assisted pipeline generation/upload flows.                                                                                                       |
+| `jq`                  | Optional | Pretty-printing JSON during manual verification and debugging      | Used in docs/examples, not required for the lab to run.                                                                                                                |
+
+Feature notes:
+
+- Basic lab startup needs only the required dependencies in the table.
+- Live capture needs `dumpcap` permissions that allow your current user to run `dumpcap -D` successfully.
+- PCAP replay from existing files does not require `dumpcap`, but the richer PCAP info view uses `capinfos` when available.
+- AI pipeline generation is optional and only works when Ollama is running locally.
+
+## Documentation
 
 Current documentation set:
 
 - `docs/README.md` - reading order and documentation map
 - `docs/03-runtime-stack.md` - current startup and runtime behavior
 - `docs/09-operations.md` - verification and troubleshooting commands
+
+## Interface Highlights
+
+<table>
+  <tr>
+    <td><img src="docs/images/stack.png" alt="Stack management view" /></td>
+    <td><img src="docs/images/pcap-replay.png" alt="Packet replay view" /></td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/rules.png" alt="Rules management view" /></td>
+    <td><img src="docs/images/live-capture.png" alt="Live capture view" /></td>
+  </tr>
+</table>
 
 ## Enrichment SDK Quick Start
 
@@ -106,12 +121,6 @@ Minimal example:
 
 ```python
 from enrich_sdk import EnrichmentContext
-
-ENRICHMENT_META = {
-    "type": "play_batch",
-    "name": "Risk Scorer",
-    "description": "Adds risk fields to matching alerts.",
-}
 
 def run(ctx: EnrichmentContext) -> None:
     ctx.update_by_query(
@@ -170,78 +179,76 @@ The repo also gives you a web control plane on top of that runtime stack.
 
 ## Architecture In One Diagram
 
-This diagram is intentionally detailed. It shows the host-run web control plane, Docker networking, service boundaries, and the main data paths.
+This diagram shows the host control plane, Docker services, bind mounts, and Elasticsearch data paths in one view. The UI and API run on the host; Elasticsearch, Kibana, Suricata, Filebeat, and ElastAlert2 run in Docker Compose.
 
 ```text
 HOST MACHINE
-┌───────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                                                                               │
-│  Browser                                                                                      │
-│    │                                                                                          │
-│    ├─ HTTP http://127.0.0.1:8050 ───────────────────────────────► Dash UI                     │
-│    │                                                              ui/app.py + ui/pages/*      │
-│    │                                                                 │                        │
-│    │                                                                 ├─ HTTP api_get/api_post │
-│    │                                                                 │                        │
-│    └─ HTTP http://localhost:5601 ──────────────────────────────────► Kibana port forward      │
-│                                                                                               │
-│  Host-run Python control plane                                                                │
-│    ┌─────────────────────────┐          Python imports          ┌──────────────────────────┐  │
-│    │ FastAPI :8000           │ ───────────────────────────────► │ core/* service modules   │  │
-│    │ api/main.py             │                                  │ stack/ elastic/ capture/ │  │
-│    │ api/routes/*.py         │ ◄─────────────────────────────── │ ingest/ rules/ enrich/   │  │
-│    └─────────────────────────┘            return JSON           │ settings/ confirm        │  │
-│                                                                 └─────────────┬────────────┘  │
-│                                                                               │               │
-│                                                                               │ subprocess /  │
-│                                                                               │ HTTP / files  │
-│                                                                               v               │
-│                                                                   local files + Docker CLI    │
-│                                                                                               │
-└───────────────────────────────────────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────────┐
+│ Browser                                                               │
+│   ├─ http://127.0.0.1:8050  ───────────────► Dash UI                  │
+│   │                                         ui/app.py + ui/pages/*    │
+│   │                                                   │               │
+│   │                                  api_get/post/delete over HTTP    │
+│   │                                                   v               │
+│   │                                         FastAPI :8000             │
+│   │                                         api/main.py + routes/*    │
+│   │                                                   │               │
+│   │                                  imports service modules          │
+│   │                                                   v               │
+│   │                                         core/*                    │
+│   │                            stack, capture, ingest, rules, enrich  │
+│   │                                                   │               │
+│   │                  Docker CLI / subprocess / HTTP / file writes     │
+│   │                                                   v               │
+│   └─ http://localhost:5601 ───────► Kibana UI                         │
+└──────────────────────────────────────┬────────────────────────────────┘
+                                       │
+                                       │ host files + bind mounts
+                                       v
+┌───────────────────────────────────────────────────────────────────────┐
+│ Repository data/config                                                │
+│ data/pcap/                  uploaded PCAPs + live capture chunks      │
+│ data/rules/suricata/        custom Suricata rules                     │
+│ data/rules/sigma/           Sigma rules for ElastAlert2 conversion    │
+│ data/ingest/                sample/uploaded logs                      │
+│ data/pipelines/             ingest pipeline definitions               │
+│ data/enrichments/           enrichment YAML config + Python scripts   │
+│ runtime/logs/suricata/      shared eve.json output                    │
+└─────────────┬─────────────────────────────────────────────────────────┘
+              │
+              │ bind-mounted into Docker services
+              v
+DOCKER COMPOSE NETWORK
+┌────────────────────┐       HTTP :9200       ┌─────────────────────────┐
+│ Kibana :5601       │ ─────────────────────► │ Elasticsearch :9200     │
+│ data views/search  │ ◄───────────────────── │ indices, aliases,       │
+└────────────────────┘       JSON results     │ templates, pipelines    │
+                                              │                         │
+┌────────────────────┐  writes eve.json       │ important indices:      │
+│ Suricata           │ ─────────────────────┐ │ suricata-*              │
+│ replay IDS engine  │                      │ │ soc-alerts              │
+│ reads /pcap +      │                      │ │ elastalert2_alerts*     │
+│ rule bind mounts   │                      │ │ enrichment audit-*      │
+└─────────▲──────────┘                      │ └───────────▲─────────────┘
+          │                                 │             │
+          │ docker exec suricata -r <pcap>  │             │ bulk/search/update
+          │                                 v             │
+┌─────────┴──────────┐              ┌─────────────────────┴─────────────┐
+│ PCAP workflows     │              │ Filebeat                          │
+│ packet replay      │              │ tails /var/log/suricata/eve.json  │
+│ live capture chunks│              │ indexes through suricata.common   │
+└────────────────────┘              └───────────────────────────────────┘
 
-DOCKER INTERNAL NETWORK
-─────────────────────────────────────────────────────────────────────────────────────────────────
+┌────────────────────┐       search/write      ┌────────────────────────┐
+│ ElastAlert2        │ ───────────────────────►│ Elasticsearch          │
+│ static + Sigma     │ ◄────────────────────── │ scheduled rule queries │
+│ generated rules    │       query results     │ writes alert docs      │
+└────────────────────┘                         └────────────────────────┘
 
-┌──────────────────────┐       HTTP :9200        ┌──────────────────────────────────────────────┐
-│      Kibana          │ ──────────────────────► │              Elasticsearch                   │
-│  query/render layer  │ ◄────────────────────── │  stores docs, aliases, templates, pipelines  │
-└──────────────────────┘      JSON results       │                                              │
-                                                 │  important indices/aliases:                  │
-                                                 │    suricata-*                                │
-                                                 │    elastalert2_alerts                        │
-                                                 │    soc-alerts                                │
-                                                 │    soc-lab-enrichment-audit-*                │
-                                                 └────────────────┬─────────────────────────────┘
-                                                                  ▲
-                                                                  │ POST /_bulk, /_search, etc
-                        tails eve.json                            │
-┌──────────────────────┐  from bind mount  ┌──────────────────────┴─────────────────────────────┐
-│      Filebeat        │ ─────────────────►│              Elasticsearch ingest                  │
-│ reads eve.json       │                   │  pipelines normalize Suricata and uploaded logs    │
-└───────────┬──────────┘                   └────────────────────────────────────────────────────┘
-            │
-            │ bind-mounted file
-            v
-┌───────────────────────────────────────────────────────────────────────────────────────────────┐
-│ runtime/logs/suricata/eve.json                                                                │
-│ shared file path between host and containers                                                  │
-└───────────────────────────────▲───────────────────────────────────────────────────────────────┘
-                                │ writes JSON events
-                                │
-                     docker exec│suricata -r <pcap>
-                                │
-┌──────────────────────┐        │        PCAPs from bind mount        ┌─────────────────────────┐
-│      Suricata        │ ◄──────┴──────────────────────────────────── │ data/pcap on host       │
-│ decode/reassembly    │                                              │ replay files + live     │
-│ rules -> eve.json    │                                              │ capture chunks          │
-└──────────────────────┘                                              └─────────────────────────┘
-
-┌──────────────────────┐       HTTP :9200        ┌──────────────────────────────────────────────┐
-│    ElastAlert2       │ ──────────────────────► │              Elasticsearch                   │
-│ scheduled searches   │ ◄────────────────────── │  queries suricata-* and writes alert docs    │
-│ writes alert docs    │      query results      └──────────────────────────────────────────────┘
-└──────────────────────┘
+FastAPI also talks to Elasticsearch and Kibana directly from the host for
+search pages, aliases, log uploads, ingest pipelines, Kibana data views,
+enrichment runs, audit records, rollback, and service health. The
+enrichment scheduler runs inside the FastAPI process.
 ```
 
 ## Main Data Paths
@@ -304,7 +311,7 @@ soc-lab/
 │   ├── utils.py                 # API error helpers
 │   └── routes/
 │       ├── alerts.py            # alert search and aggregations
-│       ├── capture.py           # replay, live capture, upload, pipeline endpoints
+│       ├── capture.py           # PCAP replay, live capture, upload, pipeline endpoints
 │       ├── enrichment.py        # enrichment run, cluster, audit, rollback endpoints
 │       ├── indices.py           # alias and index inventory / mutation endpoints
 │       ├── network.py           # Suricata flow queries and summaries
@@ -335,7 +342,9 @@ soc-lab/
 │   │   ├── context.py           # main enrichment SDK implementation
 │   │   ├── rollback.py          # field-level rollback engine
 │   │   ├── runner.py            # enrichment orchestration from config to execution
+│   │   ├── scheduler.py         # in-process enrichment scheduler
 │   │   ├── scripts.py           # dynamic enrichment script loader
+│   │   ├── validation.py        # enrichment config/script validation helpers
 │   │   └── utils.py             # enrichment field/query helpers
 │   ├── ingest/
 │   │   ├── bulk.py              # bulk ingest helpers
@@ -356,14 +365,27 @@ soc-lab/
 │   ├── enrichments/
 │   │   ├── config/              # enrichment cluster and run config
 │   │   └── scripts/             # user enrichment scripts
-│   ├── ingest/                  # sample logs for ingest testing
+│   ├── ingest/                  # sample/uploaded logs for ingest testing
 │   ├── pcap/                    # replay PCAPs and live capture artifacts
 │   ├── pipelines/               # built-in, custom, and generated ingest pipelines
 │   └── rules/                   # user-editable Suricata and Sigma rules
 ├── docker/
 │   ├── elastalert-start.sh      # ElastAlert2 container entrypoint
 │   └── suricata-start.sh        # Suricata container entrypoint
-├── docs/                        # main long-form documentation set
+├── docs/
+│   ├── images/                  # README screenshots
+│   ├── README.md                # documentation reading order
+│   ├── 01-system-overview.md    # system overview
+│   ├── 02-repo-map.md           # repo map and file roles
+│   ├── 03-runtime-stack.md      # runtime stack and startup behavior
+│   ├── 04-backend-services.md   # backend service module guide
+│   ├── 05-api-reference.md      # FastAPI route reference
+│   ├── 06-ui-guide.md           # Dash UI structure and patterns
+│   ├── 07-data-flows.md         # end-to-end data flows
+│   ├── 08-enrichment.md         # enrichment architecture
+│   ├── 09-operations.md         # verification and troubleshooting
+│   ├── 10-enrichment-sdk-reference.md
+│   └── 11-enrichment-internals.md
 ├── runtime/                     # runtime logs and generated status files
 ├── enrich_sdk/
 │   └── __init__.py              # public enrichment SDK import surface
@@ -371,12 +393,28 @@ soc-lab/
 │   ├── app.py                   # Dash app entry point
 │   ├── helpers.py               # API wrappers and shared UI components
 │   ├── assets/style.css         # global CSS styling
-│   └── pages/                   # feature pages
+│   └── pages/
+│       ├── overview.py          # dashboard page
+│       ├── alerts.py            # alert search page
+│       ├── network.py           # network graph page
+│       ├── ingest.py            # generic log upload page
+│       ├── capture_pcap.py      # packet replay page callbacks
+│       ├── capture_pcap_widgets.py
+│       ├── capture_live.py      # live capture page
+│       ├── rules.py             # rules page callbacks
+│       ├── rules_editor.py      # rules editor layout helpers
+│       ├── enrichment.py        # enrichment page callbacks
+│       ├── enrichment_layout.py # enrichment page layout helpers
+│       ├── stack.py             # stack management page
+│       ├── aliases.py           # aliases page
+│       └── settings.py          # settings page
 ├── compose.yml                  # Docker Compose definition for the lab stack
+├── requirements.txt             # Python package requirements
 ├── start.sh                     # start Docker stack + FastAPI + Dash + watcher
 ├── stop.sh                      # stop host-run web processes and Docker stack
 ├── restart.sh                   # restart helper
 ├── reset.sh                     # destructive reset helper
+├── LICENSE                      # AGPLv3 license text
 ├── EXPLANATION.md               # older very detailed conceptual deep dive
 ├── WEB_MIGRATION_DESIGN.md      # web migration architecture notes
 └── ENRICHMENT_DESIGN.md         # enrichment design notes and decisions

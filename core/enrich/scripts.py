@@ -7,7 +7,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any
 
-from core.settings import repo_root
+from core.enrich.validation import resolve_script_file
 
 @dataclass
 class EnrichmentScript:
@@ -16,10 +16,7 @@ class EnrichmentScript:
 
 
 def resolve_script_path(script_path: str) -> Path:
-    path = repo_root() / "data" / "enrichments" / script_path
-    if not path.exists():
-        raise FileNotFoundError(f"Enrichment script not found: {path}")
-    return path
+    return resolve_script_file(script_path, must_exist=True)
 
 
 def load_script(script_path: str, module_name: str) -> EnrichmentScript:

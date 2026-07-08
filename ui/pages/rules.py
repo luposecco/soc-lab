@@ -7,7 +7,7 @@ import dash
 from dash import ALL, Input, Output, State, callback, ctx, dcc, html
 
 from ui.helpers import api_delete, api_get, api_post, error_banner, lrow, ltable, topbar
-from ui.pages.rules_parts import editor_card as _editor_card, metrics_row as _metrics_row, rules_table as _rules_table
+from ui.pages.rules_editor import editor_card as _editor_card, metrics_row as _metrics_row, rules_table as _rules_table
 
 dash.register_page(__name__, path="/rules")
 

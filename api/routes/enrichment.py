@@ -9,6 +9,7 @@ from fastapi import APIRouter, Query
 from api.models import ClusterSaveRequest, EnrichmentSaveRequest, EnrichRunRequest, ScriptSaveRequest, ScriptValidateRequest
 from api.utils import bad
 from core.settings import repo_root
+from core.enrich.validation import normalize_schedule, normalize_script_path, resolve_script_file
 
 router = APIRouter(prefix="/api/enrich")
 
@@ -92,27 +93,29 @@ def enrich_list() -> dict:
 @router.post("/enrichments/{key}")
 def enrichment_save(key: str, req: EnrichmentSaveRequest) -> dict:
     try:
+        script = normalize_script_path(req.script, must_exist=False)
+        schedule = normalize_schedule(req.schedule)
         raw = yaml.safe_load(_ENRICHMENTS_YML.read_text()) if _ENRICHMENTS_YML.exists() else {}
         if not raw:
             raw = {}
         raw.setdefault("enrichments", {})
         entry: dict = {
             "name": req.display_name or key,
-            "script": req.script,
+            "script": script,
             "targets": req.targets,
             "enabled": req.enabled,
         }
         if req.on_log:
             entry["on_log"] = True
-        if req.schedule:
-            entry["schedule"] = req.schedule
+        if schedule:
+            entry["schedule"] = schedule
         if req.description:
             entry["description"] = req.description
         raw["enrichments"][key] = entry
         _ENRICHMENTS_YML.write_text(yaml.dump(raw, default_flow_style=False, allow_unicode=True))
         return {"ok": True, "key": key}
     except Exception as exc:
-        raise bad(exc)
+        raise bad(exc, 400)
 
 
 @router.delete("/enrichments/{key}")
@@ -147,28 +150,31 @@ def enrich_scripts() -> dict:
 @router.get("/script-content")
 def enrich_script_content(path: str = Query(...)) -> dict:
     try:
-        full = repo_root() / "data" / "enrichments" / path
+        full = resolve_script_file(path)
         if not full.exists():
             return {"content": ""}
         return {"content": full.read_text()}
     except Exception as exc:
-        raise bad(exc)
+        raise bad(exc, 400)
 
 
 @router.post("/script-content")
 def enrich_script_save(req: ScriptSaveRequest) -> dict:
     try:
-        full = repo_root() / "data" / "enrichments" / req.path
+        path = normalize_script_path(req.path, must_exist=False)
+        full = resolve_script_file(path)
         full.parent.mkdir(parents=True, exist_ok=True)
         full.write_text(req.content)
-        return {"ok": True, "path": req.path}
+        return {"ok": True, "path": path}
     except Exception as exc:
-        raise bad(exc)
+        raise bad(exc, 400)
 
 
 @router.post("/script-validate")
 def enrich_script_validate(req: ScriptValidateRequest) -> dict:
     try:
+        if req.path:
+            normalize_script_path(req.path, must_exist=False)
         compile(req.content, req.path or "<string>", "exec")
         tree = ast.parse(req.content)
         has_run = any(

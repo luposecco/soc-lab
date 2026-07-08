@@ -74,12 +74,13 @@ Why this matters:
 
 Stores:
 
-- `_es`
-- `cluster`
-- `enrichment`
-- `run_id`
-- `dry_run`
-- `_stats`
+- `_es` — Elasticsearch client
+- `cluster` — cluster name string
+- `enrichment` — enrichment config key
+- `run_id` — shared across all clusters in one invocation
+- `dry_run` — bool
+- `params` — dict, always initialised to `{}`, set to the actual params dict by `invoke_script` before `run()` is called
+- `_stats` — counts for created/updated/deleted
 
 Important detail:
 
@@ -343,19 +344,16 @@ This is one of the core building blocks of rollback correctness.
 
 ## `core/enrich/scripts.py`
 
-This file handles dynamic script loading and invocation rules.
-
-### `VALID_ENRICHMENT_TYPES`
-
-Defines the currently allowed metadata types.
+This file handles dynamic script loading and invocation. All metadata was removed from scripts in the current design — it now lives in `enrichments.yml`.
 
 ### `EnrichmentScript`
 
 Small dataclass holding:
 
-- path
-- module
-- meta
+- `path` — absolute path of the loaded script file
+- `module` — the live Python module object
+
+No `meta` field. Metadata (name, description, schedule, on_log) comes from YAML, not from the script.
 
 ### `resolve_script_path(script_path)`
 
@@ -370,42 +368,29 @@ Implementation flow:
 ```text
 resolve repo path
    -> build importlib spec
-   -> execute module
-   -> normalize ENRICHMENT_META
+   -> execute module into fresh module namespace
    -> ensure module.run is callable
-   -> return EnrichmentScript dataclass
+   -> return EnrichmentScript(path, module)
 ```
+
+**Key difference from earlier design:** No `ENRICHMENT_META` is read or validated. Scripts are pure logic — only `run(ctx)` matters.
 
 ### `invoke_script(script, ctx, params=None)`
 
 Implementation flow:
 
 ```text
+set ctx.params = params or {}
 inspect positional arity of script.module.run
-   -> if arity == 1 and params passed: raise error
-   -> if arity == 1: call run(ctx)
-   -> if arity == 2: call run(ctx, runtime_params)
-   -> else: raise signature error
+   -> if arity >= 2: call run(ctx, ctx.params)
+   -> else:          call run(ctx)
 ```
 
-Why arity validation is important:
-
-- script contract must stay explicit
-- GUI/runtime-param behavior should not rely on guesswork
+**`ctx.params` is always set before the call** regardless of arity, so scripts can always access `ctx.params.get("_id")` safely. Scripts with arity 2 receive the same dict as the second argument for backwards compatibility.
 
 ### `_run_positional_arity(run_fn)`
 
-Uses `inspect.signature(...)` and counts positional parameters.
-
-### `_normalize_meta(raw_meta, path)`
-
-Behavior:
-
-- ensure metadata is a dict
-- default type to `play_batch`
-- ensure type is allowed
-- default display name from filename stem if absent
-- default description to empty string
+Uses `inspect.signature(...)` and counts positional (`POSITIONAL_ONLY` or `POSITIONAL_OR_KEYWORD`) parameters.
 
 ## `core/enrich/clusters.py`
 
@@ -495,14 +480,16 @@ Points at `data/enrichments/config/enrichments.yml`.
 
 Dataclass fields:
 
-- `name`
-- `script`
-- `targets`
-- `enabled`
-- `schedule`
-- `meta`
+- `name` — config key (from YAML map key)
+- `script` — relative path under `data/enrichments/`
+- `targets` — list of cluster names
+- `enabled` — bool
+- `on_log` — bool; true means shows in per-alert enrichment menu
+- `schedule` — string like `15m`, `2h`, or empty
+- `display_name` — human-readable name from `name:` in YAML
+- `description` — description from YAML
 
-Its `to_dict()` method merges config data with script metadata so the API/UI can expose both together.
+Its `to_dict()` method serialises all fields for the API response. Scripts are no longer loaded at list time.
 
 ### `load_enrichment_config(path=None)`
 
@@ -511,15 +498,17 @@ Implementation flow:
 ```text
 read YAML
 for each configured enrichment:
-   -> load script to read metadata
-   -> shape config + metadata into EnrichmentDef
+   -> parse config fields from YAML entry
+   -> build EnrichmentDef from YAML only (no script load)
+   -> call .to_dict()
 return list of dicts
 ```
 
-Important design implication:
+**Key difference from earlier design:** Scripts are no longer loaded during `load_enrichment_config`. Metadata comes from YAML directly. Broken script files do not break the config listing endpoint — they only fail at run time when `load_script` is called.
 
-- configuration listing depends on scripts loading successfully
-- broken scripts can therefore surface at “list enrichments” time, not only at run time
+### `_parse_schedule(raw)`
+
+Accepts three forms: string (`”15m”`), dict with `every` key (`{“every”: “15m”}`), or dict with `cron` key. Returns a canonical string or empty string.
 
 ### `run_enrichment(...)`
 
@@ -720,10 +709,13 @@ If you want to add a new script-author method:
 - decide whether rollback should support it
 - update docs in `docs/08` and `docs/10`
 
-If you want to add a new script metadata field:
+If you want to add a new enrichment config field (e.g. a new YAML key):
 
-- update `core/enrich/scripts.py`
-- then update any UI/API consumers that list enrichments
+- add it to `EnrichmentDef` in `core/enrich/runner.py`
+- add it to `EnrichmentDef.to_dict()`
+- add it to the `EnrichmentSaveRequest` Pydantic model in `api/models.py`
+- handle it in the `enrichment_save` API route
+- add the field to the edit panel form in `ui/pages/enrichment_layout.py`
 
 If you want to add a new cluster auth style:
 

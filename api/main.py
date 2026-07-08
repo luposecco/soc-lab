@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import warnings
+from contextlib import asynccontextmanager
 warnings.filterwarnings("ignore", message=".*urllib3.*", category=UserWarning)
 warnings.filterwarnings("ignore", message=".*LibreSSL.*", category=UserWarning)
 
@@ -8,11 +9,22 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from core.settings import es_url, kibana_url
+from core.enrich.scheduler import scheduler as enrichment_scheduler
 from core.stack.docker import list_services
 from api.models import HealthResponse
 from api.routes import alerts, capture, enrichment, indices, network, overview, rules, stack
 
-app = FastAPI(title="SOC Lab API", version="0.1.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    enrichment_scheduler.start()
+    try:
+        yield
+    finally:
+        enrichment_scheduler.stop()
+
+
+app = FastAPI(title="SOC Lab API", version="0.1.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://127.0.0.1:8050", "http://localhost:8050"],

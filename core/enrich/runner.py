@@ -12,6 +12,7 @@ from core.settings import repo_root
 from core.enrich.clusters import ClusterManager
 from core.enrich.context import EnrichmentContext
 from core.enrich.scripts import invoke_script, load_script
+from core.enrich.validation import normalize_schedule, normalize_script_path
 
 _DEFAULT_CONFIG = repo_root() / "data" / "enrichments" / "config" / "enrichments.yml"
 
@@ -20,9 +21,9 @@ def _parse_schedule(raw: Any) -> str:
     if not raw:
         return ""
     if isinstance(raw, str):
-        return raw.strip()
+        return normalize_schedule(raw)
     if isinstance(raw, dict):
-        return raw.get("every", raw.get("cron", ""))
+        return normalize_schedule(raw.get("every", raw.get("cron", "")))
     return ""
 
 
@@ -59,7 +60,7 @@ def load_enrichment_config(path: Path | None = None) -> list[dict[str, Any]]:
     for name, cfg in (raw.get("enrichments") or {}).items():
         enrichments.append(EnrichmentDef(
             name=name,
-            script=cfg.get("script", ""),
+            script=normalize_script_path(cfg.get("script", ""), must_exist=False) if cfg.get("script") else "",
             targets=cfg.get("targets") or ["lab"],
             enabled=bool(cfg.get("enabled", True)),
             on_log=bool(cfg.get("on_log", False)),
